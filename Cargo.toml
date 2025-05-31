@@ -1,0 +1,9 @@
+[package]
+name = "vk-farmer-bot"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chromedriver-api = "0.1.2"
+macron = { version = "0.1.5", features = ["derive", "input", "string"] }
+tokio = { version = "1.45.1", features = ["full"] }
