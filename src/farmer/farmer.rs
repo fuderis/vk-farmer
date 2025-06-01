@@ -55,7 +55,7 @@ impl Farmer {
                             }
 
                             Err(e) => {
-                                eprintln!("{}", e);
+                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.config.profile);
                             }
                         }
                     }
@@ -79,7 +79,7 @@ impl Farmer {
                             }
 
                             Err(e) => {
-                                eprintln!("{}", e);
+                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.config.profile);
                             }
                         }
                     }
@@ -103,7 +103,7 @@ impl Farmer {
                             }
 
                             Err(e) => {
-                                eprintln!("{}", e);
+                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.config.profile);
                             }
                         }
                     }
@@ -127,7 +127,7 @@ impl Farmer {
                             }
 
                             Err(e) => {
-                                eprintln!("{}", e);
+                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.config.profile);
                             }
                         }
                     }
