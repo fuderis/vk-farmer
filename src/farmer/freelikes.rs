@@ -76,7 +76,7 @@ impl FreeLikes {
                     if (!button_like) {{
                         button_like = document.querySelector('div[data-testid="video_modal_like_button"]');
 
-                        if (button_like.getAttribute('style').match('--vkui--color_accent_red')) {{
+                        if (button_like && button_like.getAttribute('style').match('--vkui--color_accent_red')) {{
                             button_like = null;
                         }}
                     }}
