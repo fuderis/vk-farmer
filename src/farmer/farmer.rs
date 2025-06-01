@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use super::{ Config, FreeLikes, BigLike };
+use crate::{ prelude::*, Config };
+use super::{ FreeLikes, BigLike };
 
 use chromedriver_api::Session;
 use tokio::time::{ sleep, Duration };

@@ -3,7 +3,7 @@
 pub use crate::{ Result, Error, ErrorKind };
 
 pub(crate) use macron::*;
-// pub(crate) use serde::{ Serialize, Deserialize };
+pub(crate) use serde::{ Serialize, Deserialize };
 
 // pub(crate) use std::collections::HashMap;
 pub(crate) use std::format as fmt;

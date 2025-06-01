@@ -1,5 +1,7 @@
+use crate::prelude::*;
+
 /// The bot subconfig
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SubConfig {
     pub farm_likes: bool,
     pub likes_limit: usize,
@@ -15,7 +17,7 @@ pub struct SubConfig {
 }
 
 /// The bot config
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub profile: String,
     pub port: String,
@@ -36,7 +38,7 @@ impl ::std::default::Default for Config {
                 likes_min_price: 3,
 
                 farm_subscribes: true,
-                subscribes_limit: 15,
+                subscribes_limit: 10,
                 subscribes_min_price: 5,
 
                 farm_friends: true,
@@ -50,7 +52,7 @@ impl ::std::default::Default for Config {
                 likes_min_price: 10,
 
                 farm_subscribes: true,
-                subscribes_limit: 15,
+                subscribes_limit: 10,
                 subscribes_min_price: 10,
 
                 farm_friends: true,
