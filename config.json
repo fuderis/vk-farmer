@@ -1,0 +1,38 @@
+{
+  "profiles": [
+    {
+      "port": "54477",
+      "profile": "Default"
+    }
+  ],
+
+  "settings": {
+    "freelikes": {
+      "farm_likes": true,
+      "likes_limit": 30,
+      "likes_min_price": 3,
+
+      "farm_subscribes": true,
+      "subscribes_limit": 10,
+      "subscribes_min_price": 5,
+
+      "farm_friends": true,
+      "friends_limit": 10,
+      "friends_min_price": 5
+    },
+    
+    "biglike": {
+      "farm_likes": true,
+      "likes_limit": 30,
+      "likes_min_price": 10,
+
+      "farm_subscribes": true,
+      "subscribes_limit": 10,
+      "subscribes_min_price": 10,
+
+      "farm_friends": true,
+      "friends_limit": 10,
+      "friends_min_price": 10
+    }
+  }
+}

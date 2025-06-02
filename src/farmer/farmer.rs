@@ -1,4 +1,4 @@
-use crate::{ prelude::*, Config };
+use crate::{ prelude::*, Profile, Settings };
 use super::{ FreeLikes, BigLike };
 
 use chromedriver_api::Session;
@@ -7,7 +7,8 @@ use tokio::time::{ sleep, Duration };
 // Farmer bot
 #[derive(Debug)]
 pub struct Farmer {
-    config: Config,
+    profile: Profile,
+    settings: Settings,
     session: Session,
     freelikes: FreeLikes,
     biglike: BigLike,
@@ -15,47 +16,48 @@ pub struct Farmer {
 
 impl Farmer {
     /// Login to profile
-    pub async fn login(config: Config) -> Result<Self> {
+    pub async fn login(settings: Settings, profile: Profile) -> Result<Self> {
         // run session:
-        let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &config.profile);
-        let mut session = Session::run(&config.port, Some(&path)).await?;
+        let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.profile);
+        let mut session = Session::run(&profile.port, Some(&path)).await?;
 
         // init task tab:
         let task_tab = session.open("https://vk.com/").await?;
         
         // init sources:
-        let freelikes = FreeLikes::login(&config.profile, &mut session, task_tab.clone()).await?;
-        let biglike = BigLike::login(&config.profile, &mut session, task_tab.clone()).await?;
+        let freelikes = FreeLikes::login(&profile.profile, &mut session, task_tab.clone()).await?;
+        let biglike = BigLike::login(&profile.profile, &mut session, task_tab.clone()).await?;
 
-        println!("[INFO] ({}) Session is ready.", &config.profile);
+        println!("[INFO] ({}) Session is ready.", &profile.profile);
 
         Ok(Self {
-            config,
+            profile,
+            settings,
             session,
             freelikes,
             biglike,
         })
     }
 
-    /// Start farming
+    /// Start settings
     pub async fn farm(&mut self) -> Result<()> {
         loop {
             // <freelikes.online> farm likes:
-            if self.config.freelikes.farm_likes {
-                match self.freelikes.farm_likes(self.config.freelikes.likes_min_price, self.config.freelikes.likes_limit).await {
+            if self.settings.freelikes.farm_likes {
+                match self.freelikes.farm_likes(self.settings.freelikes.likes_min_price, self.settings.freelikes.likes_limit).await {
                     Err(e) => {
                         match e.downcast::<Error>() {
                             Ok(err) => {
                                 match err.kind {
                                     ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.config.profile);
+                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
                                         sleep(Duration::from_secs(10)).await;
                                     }
                                 }
                             }
 
                             Err(e) => {
-                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.config.profile);
+                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
                             }
                         }
                     }
@@ -65,21 +67,21 @@ impl Farmer {
             }
 
             // <freelikes.online> farm subscribes:
-            if self.config.freelikes.farm_subscribes {
-                match self.freelikes.farm_subscribes(self.config.freelikes.subscribes_min_price, self.config.freelikes.subscribes_limit).await {
+            if self.settings.freelikes.farm_subscribes {
+                match self.freelikes.farm_subscribes(self.settings.freelikes.subscribes_min_price, self.settings.freelikes.subscribes_limit).await {
                     Err(e) => {
                         match e.downcast::<Error>() {
                             Ok(err) => {
                                 match err.kind {
                                     ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.config.profile);
+                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
                                         sleep(Duration::from_secs(10)).await;
                                     }
                                 }
                             }
 
                             Err(e) => {
-                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.config.profile);
+                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
                             }
                         }
                     }
@@ -89,21 +91,21 @@ impl Farmer {
             }
 
             // <biglike.org> farm likes:
-            if self.config.biglike.farm_likes {
-                match self.biglike.farm_likes(self.config.biglike.likes_min_price, self.config.biglike.likes_limit).await {
+            if self.settings.biglike.farm_likes {
+                match self.biglike.farm_likes(self.settings.biglike.likes_min_price, self.settings.biglike.likes_limit).await {
                     Err(e) => {
                         match e.downcast::<Error>() {
                             Ok(err) => {
                                 match err.kind {
                                     ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.config.profile);
+                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
                                         sleep(Duration::from_secs(10)).await;
                                     }
                                 }
                             }
 
                             Err(e) => {
-                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.config.profile);
+                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
                             }
                         }
                     }
@@ -113,21 +115,21 @@ impl Farmer {
             }
 
             // <biglike.org> farm subscribes:
-            if self.config.biglike.farm_subscribes {
-                match self.biglike.farm_subscribes(self.config.biglike.subscribes_min_price, self.config.biglike.subscribes_limit).await {
+            if self.settings.biglike.farm_subscribes {
+                match self.biglike.farm_subscribes(self.settings.biglike.subscribes_min_price, self.settings.biglike.subscribes_limit).await {
                     Err(e) => {
                         match e.downcast::<Error>() {
                             Ok(err) => {
                                 match err.kind {
                                     ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.config.profile);
+                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
                                         sleep(Duration::from_secs(10)).await;
                                     }
                                 }
                             }
 
                             Err(e) => {
-                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.config.profile);
+                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
                             }
                         }
                     }
@@ -136,7 +138,7 @@ impl Farmer {
                 }
             }
 
-            println!("[INFO] (FARMER) <{}> Farming paused for 10 minutes ..", self.config.profile);
+            println!("[INFO] (FARMER) <{}> Farming paused for 10 minutes ..", self.profile.profile);
             sleep(Duration::from_secs(60 * 10)).await;
         }
     }
