@@ -39,102 +39,127 @@ impl Farmer {
         })
     }
 
-    /// Start settings
+    /// Start farming
     pub async fn farm(&mut self) -> Result<()> {
         loop {
             // <freelikes.online> farm likes:
-            if self.settings.freelikes.farm_likes {
-                match self.freelikes.farm_likes(self.settings.freelikes.likes_min_price, self.settings.freelikes.likes_limit).await {
-                    Err(e) => {
-                        match e.downcast::<Error>() {
-                            Ok(err) => {
-                                match err.kind {
-                                    ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
-                                        sleep(Duration::from_secs(10)).await;
-                                    }
+            if self.profile.farm_likes {
+                if let Err(e) = self.freelikes.vk_farm_likes(self.settings.freelikes.likes_min_price, self.settings.freelikes.likes_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <freelikes.online> The tasks 'likes' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
                                 }
                             }
+                        }
 
-                            Err(e) => {
-                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
-                            }
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
                         }
                     }
+                }
+            }
 
-                    _ => {}
+            // <freelikes.online> farm friends:
+            if self.profile.farm_friends {
+                if let Err(e) = self.freelikes.vk_farm_friends(self.settings.freelikes.friends_min_price, self.settings.freelikes.friends_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <freelikes.online> The tasks 'friends' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
+                                }
+                            }
+                        }
+
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
+                        }
+                    }
                 }
             }
 
             // <freelikes.online> farm subscribes:
-            if self.settings.freelikes.farm_subscribes {
-                match self.freelikes.farm_subscribes(self.settings.freelikes.subscribes_min_price, self.settings.freelikes.subscribes_limit).await {
-                    Err(e) => {
-                        match e.downcast::<Error>() {
-                            Ok(err) => {
-                                match err.kind {
-                                    ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
-                                        sleep(Duration::from_secs(10)).await;
-                                    }
+            if self.profile.farm_subscribes {
+                if let Err(e) = self.freelikes.vk_farm_subscribes(self.settings.freelikes.subscribes_min_price, self.settings.freelikes.subscribes_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <freelikes.online> The tasks 'subscribes' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
                                 }
                             }
+                        }
 
-                            Err(e) => {
-                                eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
-                            }
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.profile);
                         }
                     }
-
-                    _ => {}
                 }
             }
 
+
             // <biglike.org> farm likes:
-            if self.settings.biglike.farm_likes {
-                match self.biglike.farm_likes(self.settings.biglike.likes_min_price, self.settings.biglike.likes_limit).await {
-                    Err(e) => {
-                        match e.downcast::<Error>() {
-                            Ok(err) => {
-                                match err.kind {
-                                    ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
-                                        sleep(Duration::from_secs(10)).await;
-                                    }
+            if self.profile.farm_likes {
+                if let Err(e) = self.biglike.vk_farm_likes(self.settings.biglike.likes_min_price, self.settings.biglike.likes_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <biglike.org> The tasks 'likes' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
                                 }
                             }
+                        }
 
-                            Err(e) => {
-                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
-                            }
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
                         }
                     }
+                }
+            }
 
-                    _ => {}
+            // <biglike.org> farm friends:
+            if self.profile.farm_friends {
+                if let Err(e) = self.biglike.vk_farm_friends(self.settings.biglike.friends_min_price, self.settings.biglike.friends_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <biglike.org> The tasks 'friends' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
+                                }
+                            }
+                        }
+
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
+                        }
+                    }
                 }
             }
 
             // <biglike.org> farm subscribes:
-            if self.settings.biglike.farm_subscribes {
-                match self.biglike.farm_subscribes(self.settings.biglike.subscribes_min_price, self.settings.biglike.subscribes_limit).await {
-                    Err(e) => {
-                        match e.downcast::<Error>() {
-                            Ok(err) => {
-                                match err.kind {
-                                    ErrorKind::NoMoreTasks => {
-                                        println!("[INFO] ({}) <freelikes.online> The tasks are over, timeout for 10 seconds ..", self.profile.profile);
-                                        sleep(Duration::from_secs(10)).await;
-                                    }
+            if self.profile.farm_subscribes {
+                if let Err(e) = self.biglike.vk_farm_subscribes(self.settings.biglike.subscribes_min_price, self.settings.biglike.subscribes_limit).await {
+                    match e.downcast::<Error>() {
+                        Ok(e) => {
+                            match e.as_ref() {
+                                Error::NoMoreTasks => {
+                                    println!("[INFO] ({}) <biglike.org> The tasks 'subscribes' are over, timeout for 10 seconds ..", self.profile.profile);
+                                    sleep(Duration::from_secs(10)).await;
                                 }
                             }
+                        }
 
-                            Err(e) => {
-                                eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
-                            }
+                        Err(e) => {
+                            eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.profile);
                         }
                     }
-
-                    _ => {}
                 }
             }
 

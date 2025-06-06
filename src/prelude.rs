@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-pub use crate::{ Result, Error, ErrorKind };
+pub use crate::{ Result, Error };
 
 pub(crate) use macron::*;
 pub(crate) use serde::{ Serialize, Deserialize };

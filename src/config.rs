@@ -5,33 +5,27 @@ use std::fs;
 /// The bot subconfig
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FarmSettings {
-    pub farm_likes: bool,
     pub likes_limit: usize,
     pub likes_min_price: usize,
 
-    pub farm_subscribes: bool,
-    pub subscribes_limit: usize,
-    pub subscribes_min_price: usize,
-
-    pub farm_friends: bool,
     pub friends_limit: usize,
     pub friends_min_price: usize,
+
+    pub subscribes_limit: usize,
+    pub subscribes_min_price: usize,
 }
 
 impl ::std::default::Default for FarmSettings {
     fn default() -> Self {
         Self {
-            farm_likes: true,
             likes_limit: 30,
             likes_min_price: 5,
 
-            farm_subscribes: true,
-            subscribes_limit: 10,
-            subscribes_min_price: 5,
-
-            farm_friends: true,
             friends_limit: 10,
             friends_min_price: 5,
+
+            subscribes_limit: 10,
+            subscribes_min_price: 5,
         }
     }
 }
@@ -41,6 +35,10 @@ impl ::std::default::Default for FarmSettings {
 pub struct Profile {
     pub port: String,
     pub profile: String,
+
+    pub farm_likes: bool,
+    pub farm_friends: bool,
+    pub farm_subscribes: bool,
 }
 
 impl ::std::default::Default for Profile {
@@ -48,6 +46,10 @@ impl ::std::default::Default for Profile {
         Self {
             port: "54477".into(),
             profile: "Default".into(),
+
+            farm_likes: true,
+            farm_friends: true,
+            farm_subscribes: true,
         }
     }    
 }
@@ -64,34 +66,28 @@ impl ::std::default::Default for Settings {
     fn default() -> Self {
         Self {
             freelikes: FarmSettings {
-                farm_likes: true,
                 likes_limit: 30,
                 likes_min_price: 3,
 
-                farm_subscribes: true,
                 subscribes_limit: 10,
                 subscribes_min_price: 5,
 
-                farm_friends: true,
                 friends_limit: 10,
                 friends_min_price: 5,
             },
 
             biglike: FarmSettings {
-                farm_likes: true,
                 likes_limit: 30,
                 likes_min_price: 10,
 
-                farm_subscribes: true,
                 subscribes_limit: 10,
                 subscribes_min_price: 10,
 
-                farm_friends: true,
                 friends_limit: 10,
                 friends_min_price: 10,
             },
         }
-    }    
+    }
 }
 
 

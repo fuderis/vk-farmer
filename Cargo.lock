@@ -641,8 +641,6 @@ dependencies = [
  "macron-input",
  "macron-inputln",
  "macron-map",
- "macron-regex",
- "macron-str",
 ]
 
 [[package]]
@@ -725,23 +723,6 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8fd1e10d314ee9aa76777f1412185fbf51844a438867107f3b617aa2eb03b53"
 dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
-name = "macron-regex"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "055b1d9e7b56b4f45b9a7501532f88b6306e3bf91fcbea8ffb71b3811380f793"
-
-[[package]]
-name = "macron-str"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d354b048a4a2bcf527b6106bcc1fb68145a444b568107f7fb7782b7014195157"
-dependencies = [
- "proc-macro2",
  "quote",
  "syn",
 ]
@@ -1441,7 +1422,7 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "vk-farmer-bot"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "chromedriver-api",
  "futures",
