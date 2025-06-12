@@ -35,6 +35,7 @@ impl ::std::default::Default for FarmSettings {
 pub struct Profile {
     pub port: String,
     pub profile: String,
+    pub vk_id: String,
 
     pub farm_likes: bool,
     pub farm_friends: bool,
@@ -46,6 +47,7 @@ impl ::std::default::Default for Profile {
         Self {
             port: "54477".into(),
             profile: "Default".into(),
+            vk_id: "".into(),
 
             farm_likes: true,
             farm_friends: true,

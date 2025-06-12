@@ -1,5 +1,5 @@
 use crate::{ prelude::*, Profile, Settings };
-use super::{ FreeLikes, BigLike };
+use super::{ VKontakte, FreeLikes, BigLike };
 
 use chromedriver_api::Session;
 use tokio::time::{ sleep, Duration };
@@ -10,6 +10,10 @@ pub struct Farmer {
     profile: Profile,
     settings: Settings,
     session: Session,
+    
+    #[allow(dead_code)]
+    vkontakte: Arc<Mutex<VKontakte>>,
+
     freelikes: FreeLikes,
     biglike: BigLike,
 }
@@ -21,12 +25,12 @@ impl Farmer {
         let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.profile);
         let mut session = Session::run(&profile.port, Some(&path)).await?;
 
-        // init task tab:
-        let task_tab = session.open("https://vk.com/").await?;
+        // init task tabs:
+        let vkontakte = Arc::new(Mutex::new(VKontakte::login(&mut session, &profile).await?));
         
-        // init sources:
-        let freelikes = FreeLikes::login(&profile.profile, &mut session, task_tab.clone()).await?;
-        let biglike = BigLike::login(&profile.profile, &mut session, task_tab.clone()).await?;
+        // init work tabs:
+        let freelikes = FreeLikes::login(&profile.profile, &mut session, vkontakte.clone()).await?;
+        let biglike = BigLike::login(&profile.profile, &mut session, vkontakte.clone()).await?;
 
         println!("[INFO] ({}) Session is ready.", &profile.profile);
 
@@ -34,6 +38,9 @@ impl Farmer {
             profile,
             settings,
             session,
+
+            vkontakte,
+
             freelikes,
             biglike,
         })

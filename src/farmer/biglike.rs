@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use super::Task;
+use super::{ Task, VKontakte };
 
 use chromedriver_api::{ Session, Tab };
 use tokio::time::{ sleep, Duration };
@@ -9,36 +9,84 @@ use serde_json::Value;
 #[derive(Debug)]
 pub struct BigLike {
     pub(crate) profile: String,
-    pub(crate) work_tab: Arc<Mutex<Tab>>,
-    pub(crate) task_tab: Arc<Mutex<Tab>>
+    pub(crate) biglike: Arc<Mutex<Tab>>,
+    pub(crate) vkontakte: Arc<Mutex<VKontakte>>
 }
 
 impl BigLike {
     /// Login to profile
-    pub async fn login<S: Into<String>>(profile: S, session: &mut Session, task_tab: Arc<Mutex<Tab>>) -> Result<Self> {
+    pub async fn login<S: Into<String>>(profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
         let profile = profile.into();
         
         // open tabs:
-        let work_tab = session.open("https://biglike.org/").await?;
+        let biglike = session.open("https://biglike.org/vklike").await?;
+        let mut biglike_lock = biglike.lock().await;
+        
+        let mut vk_lock = vkontakte.lock().await;
+
+        // login to account:
+        if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
+            println!("[INFO] ({}) <biglike.org> Login to account ..", &profile);
+
+            let _ = biglike_lock.inject(&("".to_string() + r##"
+                let _btn_enter_ = document.querySelector('a[data-target="#login"]');
+                _btn_enter_.focus();
+                _btn_enter_.click();
+            
+                let _inp_link_ = document.querySelector('#form_login input#link');
+                _inp_link_.value = 'https://vk.com/id"## + &vk_lock.id[..] + r##"';
+
+                let _btn_login_ = document.querySelector('#form_login button#loginvk');
+                _btn_login_.focus();
+                _btn_login_.click();
+            "##)).await?;
+            sleep(Duration::from_secs(1)).await;
+
+            while biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
+                let log = biglike_lock.inject(r#"
+                    let _txt_ = document.querySelector('#alerttxt b');
+                
+                    return _txt_.textContent;
+                "#).await?.to_string();
+
+                let text = &log[1..log.len()-1];
+
+                let old_status = vk_lock.get_status().await?;
+                vk_lock.set_status(text).await?;
+
+                let _ = biglike_lock.inject(r#"
+                    let _btn_login_ = document.querySelector('input[value="ВОЙТИ"]');
+                    _btn_login_.focus();
+                    _btn_login_.click();
+                "#).await?;
+                sleep(Duration::from_secs(1)).await;
+
+                vk_lock.set_status(&old_status).await?;
+
+                sleep(Duration::from_secs(5)).await;
+            }
+        }
 
         println!("[INFO] ({profile}) <biglike.org> Session is ready.");
 
+        drop(biglike_lock);
+        drop(vk_lock);
         Ok(Self {
             profile,
-            work_tab,
-            task_tab
+            biglike,
+            vkontakte
         })
     }
 
     /// Open tasks page
     async fn open_tasks(&mut self, path: &str) -> Result<()> {
-        let mut work_tab = self.work_tab.lock().await;
+        let mut biglike = self.biglike.lock().await;
         
         // open page:
-        work_tab.open(&fmt!("https://biglike.org/{path}")).await?;
+        biglike.open(&fmt!("https://biglike.org/{path}")).await?;
 
         // disabling pop-ups:
-        work_tab.inject(r#"
+        biglike.inject(r#"
             window.open = function(_url, _name, _specs) {
                 return null;
             };
@@ -49,10 +97,10 @@ impl BigLike {
 
     /// Search next task
     async fn next_task(&mut self) -> Result<Option<Task>> {
-        let mut work_tab = self.work_tab.lock().await;
+        let mut biglike = self.biglike.lock().await;
 
         // searching next task:
-        let log = work_tab.inject(&("return ".to_owned() + r#"(() => {
+        let log = biglike.inject(&("return ".to_owned() + r#"(() => {
             let tasks = document.querySelectorAll('#row_albom > div');
 
             if (tasks) {
@@ -64,10 +112,12 @@ impl BigLike {
 
                     let button_start = task.querySelector('img[onclick]');
                     let button_check = task.querySelector('button[onclick]');
+                    let button_remove = task.querySelector('button[onclick] ~ button[onclick]');
 
-                    if (button_start && button_check) {
+                    if (button_start && button_check && button_remove) {
                         button_start.setAttribute('start-task', '');
                         button_check.setAttribute('check-task', '');
+                        button_remove.setAttribute('remove-task', '');
 
                         let price = Number(button_start.parentNode.querySelector('p').textContent.match(/(\d+)/)[1]);
                         let url = button_start?.getAttribute('onclick')?.match(/(?:"|')(https:\/\/[^"']+)(?:"|')/)?.[1] ?? null;
@@ -89,26 +139,11 @@ impl BigLike {
     }
 
     /// Start task
-    async fn start_task(&mut self, task: &Task, script: Option<&str>) -> Result<Option<Value>> {
-        let mut work_tab = self.work_tab.lock().await;
-        let mut task_tab = self.task_tab.lock().await;
-
-        // open task page:
-        task_tab.open(&task.url).await?;
-        sleep(Duration::from_secs(1)).await;
-        
-        // inject script to task page:
-        let log = if let Some(script) = script {
-            let log = task_tab.inject(script).await?;
-            sleep(Duration::from_secs(2)).await;
-
-            Some(log)
-        } else {
-            None
-        };
+    async fn start_task(&mut self, task: &Task) -> Result<Value> {
+        let mut biglike = self.biglike.lock().await;
 
         // click to 'start-task' button:
-        let _ = work_tab.inject(&("return ".to_owned() + r#"(() => {
+        let log = biglike.inject(&("return ".to_owned() + r#"(() => {
             let button_start = document.querySelector('div[task-id=""# + &task.id + r#""] img[start-task]');
 
             if (button_start) {
@@ -121,22 +156,12 @@ impl BigLike {
         Ok(log)
     }
 
-    /// Inject script to process task
-    async fn do_task(&mut self, script: &str) -> Result<Value> {
-        let mut task_tab = self.task_tab.lock().await;
-        
-        let log = task_tab.inject(script).await?;
-        sleep(Duration::from_secs(2)).await;
-
-        Ok(log)
-    }
-
     /// Check task
     async fn check_task(&mut self, task: &Task) -> Result<()> {
-        let mut work_tab = self.work_tab.lock().await;
+        let mut biglike = self.biglike.lock().await;
 
         // click to 'check task' button
-        work_tab.inject(&("return ".to_owned() + r#"(() => {
+        biglike.inject(&("return ".to_owned() + r#"(() => {
             let button_check = document.querySelector('div[task-id=""# + &task.id + r#""] button[check-task]');
 
             if (button_check) {
@@ -149,7 +174,44 @@ impl BigLike {
         Ok(())
     }
 
+    /// Remove task
+    async fn remove_task(&mut self, task: &Task) -> Result<()> {
+        let mut biglike = self.biglike.lock().await;
+
+        // click to 'remove task' button
+        biglike.inject(&("return ".to_owned() + r#"(() => {
+            let button_remove = document.querySelector('div[task-id=""# + &task.id + r#""] button[remove-task]');
+
+            if (button_remove) {
+                button_remove.focus();
+                button_remove.click();
+            }
+        })();"#)).await?;
+        sleep(Duration::from_secs(1)).await;
+
+        Ok(())
+    }
+
     // ________________ VK.COM ________________
+
+    async fn vk_like(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.like(url).await?)
+    }
+    async fn vk_unlike(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.unlike(url).await?)
+    }
+    async fn vk_subscribe(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.subscribe(url).await?)
+    }
+    async fn vk_unsubscribe(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.unsubscribe(url).await?)
+    }
+    async fn vk_add_friend(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.add_friend(url).await?)
+    }
+    async fn vk_delete_friend(&mut self, url: &str) -> Result<bool> {
+        Ok(self.vkontakte.lock().await.delete_friend(url).await?)
+    }
 
     /// Farming VK likes
     pub async fn vk_farm_likes(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
@@ -166,74 +228,16 @@ impl BigLike {
 
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
-                    self.start_task(&task, Some(&("".to_owned() + r#"
-                        let path = window.location.pathname;
+                    self.vk_unlike(&task.url).await?;
+                    self.start_task(&task).await?;
 
-                        // post:
-                        if (path.startsWith('/wall')) {
-                            let button_like = document.querySelector('*[data-section-ref="reactions-button"]');
+                    // executing task:
+                    if !self.vk_like(&task.url).await? {
+                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        self.remove_task(&task).await?;
 
-                            if (button_like && button_like.classList.contains('PostButtonReactions--active')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-
-                        // video:
-                        else if (path.startsWith('/video')) {
-                            let button_like = document.querySelector('*[data-testid="video_modal_like_button"]');
-
-                            if (button_like && button_like.getAttribute('style').match('--vkui--color_accent_red')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-
-                        // photo:
-                        else {
-                            let button_like = document.querySelector('.like_btn');
-
-                            if (button_like && button_like.classList.contains('active')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-                    "#))).await?;
-
-                    // injecting task script:
-                    let _ = self.do_task(&("".to_owned() + r#"
-                        let path = window.location.pathname;
-
-                        // post:
-                        if (path.startsWith('/wall')) {
-                            let button_like = document.querySelector('*[data-section-ref="reactions-button"]');
-
-                            if (button_like && !button_like.classList.contains('PostButtonReactions--active')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-
-                        // video:
-                        else if (path.startsWith('/video')) {
-                            let button_like = document.querySelector('*[data-testid="video_modal_like_button"]');
-
-                            if (button_like && !button_like.getAttribute('style').match('--vkui--color_accent_red')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-
-                        // photo:
-                        else {
-                            let button_like = document.querySelector('.like_btn');
-
-                            if (button_like && !button_like.classList.contains('active')) {
-                                button_like.focus();
-                                button_like.click();
-                            }
-                        }
-                    "#)).await?;
+                        continue;
+                    }
 
                     // checking task:
                     println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
@@ -266,71 +270,16 @@ impl BigLike {
 
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
-                    self.start_task(&task, Some(&("".to_owned() + r#"(() => {
-                        let button_subscribe = document.querySelector('.ProfileHeaderButton > button[aria-label="Друзья"]');
+                    self.vk_delete_friend(&task.url).await?;
+                    self.start_task(&task).await?;
 
-                        if (button_subscribe) {
-                            const hover_event = document.createEvent("MouseEvent");
-                            hover_event.initMouseEvent("mouseover", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-                                                        
-                            button_subscribe.dispatchEvent(hover_event);
+                    // executing task:
+                    if !self.vk_add_friend(&task.url).await? {
+                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        self.remove_task(&task).await?;
 
-                            setTimeout(function() {
-                                let button_unsubscribe = document.querySelector('*[data-testid="dropdownactionsheet-item"]');
-
-                                if (button_unsubscribe) {
-                                    button_unsubscribe.focus();
-                                    button_unsubscribe.click();
-                                }
-                            }, 500);
-                        } else {
-                            let button_subscribe = document.querySelector('.ProfileHeaderButton > button[aria-expanded]');
-
-                            if (button_subscribe && button_subscribe.querySelector('.vkuiButton__content') && (button_subscribe.querySelector('.vkuiButton__content').textContent.match('Вы подписаны') || button_subscribe.querySelector('.vkuiButton__content').textContent.match('Заявка отправлена'))) {
-                                const hover_event = document.createEvent("MouseEvent");
-                                hover_event.initMouseEvent("mouseover", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-                                                            
-                                button_subscribe.dispatchEvent(hover_event);
-
-                                setTimeout(function() {
-                                    let button_unsubscribe = document.querySelector('*[data-testid="dropdownactionsheet-item"]');
-
-                                    if (button_unsubscribe) {
-                                        button_unsubscribe.focus();
-                                        button_unsubscribe.click();
-                                    }
-                                }, 500);
-                            }
-                        }
-                    })();"#))).await?;
-
-                    // injecting task script:
-                    let _ = self.do_task(&("".to_owned() + r#"(() => {
-                        let button_subscribe = document.querySelector('.ProfileHeaderButton > button[aria-expanded]');
-                        
-                        if (button_subscribe && button_subscribe.querySelector('.vkuiButton__content') && button_subscribe.querySelector('.vkuiButton__content').textContent.match('Подписан')) {
-                            const hover_event = document.createEvent("MouseEvent");
-                            hover_event.initMouseEvent("mouseover", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-                                                        
-                            button_subscribe.dispatchEvent(hover_event);
-
-                            setTimeout(function() {
-                                let button_subscribe = document.querySelector('*[data-testid="dropdownactionsheet-item"]');
-
-                                if (button_subscribe) {
-                                    button_subscribe.focus();
-                                    button_subscribe.click();
-                                }
-                            }, 500);
-                        } else {
-                            let button_subscribe = document.querySelector('.ProfileHeaderButton > button');
-                        
-                            if (button_subscribe && !button_subscribe.hasAttribute('aria-expanded')) {
-                                button_subscribe.focus();
-                                button_subscribe.click();
-                            }
-                        }
-                    })();"#)).await?;
+                        continue;
+                    }
 
                     // checking task:
                     println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
@@ -363,42 +312,16 @@ impl BigLike {
 
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
-                    self.start_task(&task, Some(&("".to_owned() + r#"(() => {
-                        let subscriber_panel = document.querySelector('#page_subscribers > div[onmouseover]');
+                    self.vk_unsubscribe(&task.url).await?;
+                    self.start_task(&task).await?;
 
-                        if (subscriber_panel) {
-                            const hover_event = document.createEvent("MouseEvent");
-                            hover_event.initMouseEvent("mouseover", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-                                                        
-                            subscriber_panel.dispatchEvent(hover_event);
+                    // executing task:
+                    if !self.vk_subscribe(&task.url).await? {
+                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        self.remove_task(&task).await?;
 
-                            setTimeout(function() {
-                                let button_unsubscribe = subscriber_panel.querySelector('*[onkeydown]');
-
-                                if (button_unsubscribe) {
-                                    button_unsubscribe.focus();
-                                    button_unsubscribe.click();
-                                }
-                            }, 500);
-                        }
-                    })();"#))).await?;
-
-                    // injecting task script:
-                    let _ = self.do_task(&("".to_owned() + r#"(() => {
-                        let subscribe_button = document.querySelector('#public_subscribe');
-
-                        if (subscribe_button) {
-                            subscribe_button.focus();
-                            subscribe_button.click();
-                        } else {
-                            let subscribe_button = document.querySelector('#join_button');
-
-                            if (subscribe_button) {
-                                subscribe_button.focus();
-                                subscribe_button.click();
-                            }
-                        }
-                    })();"#)).await?;
+                        continue;
+                    }
 
                     // checking task:
                     println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
@@ -419,9 +342,7 @@ impl BigLike {
     /// Close profile session
     pub async fn close(self) -> Result<()> {
         sleep(Duration::from_millis(100)).await;
-
-        self.work_tab.lock().await.close().await?;
-        self.task_tab.lock().await.close().await?;
+        self.biglike.lock().await.close().await?;
         
         Ok(())
     }
