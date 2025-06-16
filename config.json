@@ -1,37 +1,16 @@
 {
-  "profiles": [
-    {
-      "port": "54478",
-      "profile": "Bot1",
-      "vk_id": "630806273",
-
-      "farm_likes": true,
-      "farm_friends": true,
-      "farm_subscribes": true
-    }
-  ],
-
+  "profiles": {},
   "settings": {
     "freelikes": {
-      "likes_limit": 30,
       "likes_min_price": 3,
-
-      "subscribes_limit": 10,
-      "subscribes_min_price": 5,
-
-      "friends_limit": 10,
-      "friends_min_price": 5
+      "friends_min_price": 5,
+      "subscribes_min_price": 5
     },
-    
     "biglike": {
-      "likes_limit": 30,
       "likes_min_price": 10,
-
-      "subscribes_limit": 10,
-      "subscribes_min_price": 10,
-
-      "friends_limit": 10,
-      "friends_min_price": 10
-    }
+      "friends_min_price": 10,
+      "subscribes_min_price": 10
+    },
+    "pause_delay": 10
   }
 }

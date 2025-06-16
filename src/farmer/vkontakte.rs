@@ -13,15 +13,15 @@ pub struct VKontakte {
 impl VKontakte {
     /// Login into VK account
     pub async fn login(session: &mut Session, profile: &Profile) -> Result<Self> {
-        let tab = session.open("https://vk.com/").await?;
+        let tab = session.open("https://vk.com/").await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(3)).await;
 
         // waiting login to account:
-        while tab.lock().await.inject(r#"return window.location.pathname != '/feed'"#).await?.to_string() == "true" {
-            println!("[INFO] ({}) <vk.com> Waiting for login to account ..", &profile.profile);
+        while tab.lock().await.inject(r#"return window.location.pathname != '/feed'"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
+            println!("[INFO] ({}) <vk.com> Waiting for login to account ..", &profile.name);
             sleep(Duration::from_secs(5)).await;
         }
-        println!("[INFO] ({}) <vk.com> Session is ready.", &profile.profile);
+        println!("[INFO] ({}) <vk.com> Session is ready.", &profile.name);
         
         Ok(Self {
             id: profile.vk_id.clone(),
@@ -34,8 +34,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject("return window.location.href == 'https://vk.com/edit';").await?.to_string() == "false" {
-            tab.open("https://vk.com/edit").await?;
+        if tab.inject("return window.location.href == 'https://vk.com/edit';").await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open("https://vk.com/edit").await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -46,7 +46,7 @@ impl VKontakte {
             }
             
             return "";
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         let text = log.to_string();
@@ -63,8 +63,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject("return window.location.href == 'https://vk.com/edit';").await?.to_string() == "false" {
-            tab.open("https://vk.com/edit").await?;
+        if tab.inject("return window.location.href == 'https://vk.com/edit';").await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open("https://vk.com/edit").await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(&("".to_string() + r#"
@@ -82,7 +82,7 @@ impl VKontakte {
             }
             
             return false;
-        "#)).await?;
+        "#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -93,8 +93,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -137,7 +137,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -148,8 +148,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -192,7 +192,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -203,8 +203,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -227,7 +227,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -238,8 +238,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -264,7 +264,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -275,8 +275,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -310,7 +310,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -321,8 +321,8 @@ impl VKontakte {
         let mut tab = self.tab.lock().await;
         
         // open page:
-        if tab.inject(&fmt!("return window.location.href == '{url}';")).await?.to_string() == "false" {
-            tab.open(url).await?;
+        if tab.inject(&fmt!("return window.location.href == '{url}';")).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "false" {
+            tab.open(url).await.map_err(|e| Error::from(fmt!("{e}")))?;
         }
 
         let log = tab.inject(r#"
@@ -367,7 +367,7 @@ impl VKontakte {
             }
 
             return false;
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log.to_string() == "true")
@@ -376,7 +376,7 @@ impl VKontakte {
     /// Close VKontakte tab
     pub async fn close(self) -> Result<()> {
         sleep(Duration::from_millis(100)).await;
-        self.tab.lock().await.close().await?;
+        self.tab.lock().await.close().await.map_err(|e| Error::from(fmt!("{e}")))?;
 
         Ok(())
     }

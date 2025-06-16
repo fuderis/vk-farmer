@@ -1,7 +1,15 @@
 [package]
-name = "vk-farmer-bot"
+name = "soc-farmer-bot"
 version = "0.2.1"
 edition = "2024"
+build = "src/build.rs"
+
+[lib]
+name = "app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.1", features = ["config-toml"] }
 
 [dependencies]
 chromedriver-api = "0.1.2"
@@ -10,3 +18,7 @@ macron = { version = "0.1.5", features = ["derive", "input"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 tokio = { version = "1.45.1", features = ["full"] }
+tauri = { version = "2.0.3", features = ["config-toml"] }
+tauri-plugin-log = "2.0.0-rc"
+log = "0.4.27"
+rand = "0.8.5"

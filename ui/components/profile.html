@@ -1,0 +1,85 @@
+<div class="block" target="__ID__">
+    <div class="header">
+        <h4 class="name">__NAME__</h4>
+        <button class="delete-bot" title="Remove bot profile" target="__ID__">
+            <img class="icon" src="../assets/images/icons/cross-icon.svg" alt="X">
+        </button>
+    </div>
+
+    <form class="options">
+        <div class="line input name" style="margin-top:0">
+            <label for="__UNIQ_ID__-name">Name:</label>
+            <input id="__UNIQ_ID__-name" type="text" name="name" value="__NAME__" placeholder="Enter profile name" title="Enter profile name">
+        </div>
+
+        <div class="line input vk-id">
+            <label for="__UNIQ_ID__-vk-id">VK ID:</label>
+            <input id="__UNIQ_ID__-vk-id" type="text" name="vk-id" value="__VK_ID__" placeholder="Enter VK profile ID" title="Enter VK profile ID">
+        </div>
+
+        <div class="line switcher likes">
+            <input id="__UNIQ_ID__-farm-likes" type="checkbox" name="farm-likes" style="display:none" __FARM_LIKES__>
+            <label for="__UNIQ_ID__-farm-likes" title="Enable farming likes">
+                <div class="switcher"></div>
+                <span class="text">Farm likes</span>
+            </label>
+            <span class="limit">
+                <input type="number" name="likes-limit" value="__LIKES_LIMIT__" title="Likes limit">
+                <div class="arrows">
+                    <button class="input-plus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="+">
+                    </button>
+                    <button class="input-minus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="-">
+                    </button>
+                </div>
+            </span>
+        </div>
+
+        <div class="line switcher friends">
+            <input id="__UNIQ_ID__-farm-friends" type="checkbox" name="farm-friends" style="display:none" __FARM_FRIENDS__>
+            <label for="__UNIQ_ID__-farm-friends" title="Enable farming friends">
+                <div class="switcher"></div>
+                <span class="text">Farm friends</span>
+            </label>
+            <span class="limit">
+                <input type="number" name="friends-limit" value="__FRIENDS_LIMIT__" title="Likes limit">
+                <div class="arrows">
+                    <button class="input-plus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="+">
+                    </button>
+                    <button class="input-minus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="-">
+                    </button>
+                </div>
+            </span>
+        </div>
+
+        <div class="line switcher subscribes">
+            <input id="__UNIQ_ID__-farm-subscribes" type="checkbox" name="farm-subscribes" style="display:none" __FARM_SUBSCRIBES__>
+            <label for="__UNIQ_ID__-farm-subscribes" title="Enable farming subscribes">
+                <div class="switcher"></div>
+                <span class="text">Farm subscribes</span>
+            </label>
+            <span class="limit">
+                <input type="number" name="subscribes-limit" value="__SUBSCRIBES_LIMIT__" title="Likes limit">
+                <div class="arrows">
+                    <button class="input-plus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="+">
+                    </button>
+                    <button class="input-minus" type="button">
+                        <img class="icon" src="../assets/images/icons/arrow-up.svg" alt="-">
+                    </button>
+                </div>
+            </span>
+        </div>
+    </form>
+
+    <div class="progress-bar">
+        <p class="percent"><span>0</span>%</p>
+        <p class="descr">completed</p>
+    </div>
+
+    <button class="primary start-farm" title="Start farming" target="__ID__">Start farm</button>
+    <button class="secondary stop-farm" title="Stop farming" target="__ID__">Stop farm</button>
+</div>

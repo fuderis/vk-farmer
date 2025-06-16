@@ -1,0 +1,31 @@
+productName = "Social Farmer Bot"
+version = "0.3.0"
+identifier = "com.fuderis.soc-farmer-bot"
+
+[build]
+frontendDist = "ui"
+
+[app]
+withGlobalTauri = true
+
+[[app.windows]]
+url = "views/main.html"
+title = "Social Farmer Bot (v0.3.0)"
+width = 950
+height = 600
+resizable = true
+fullscreen = false
+
+[app.security]
+csp = ""
+
+[bundle]
+active = true
+targets = "all"
+icon = [
+  "icons/32x32.png",
+  "icons/128x128.png",
+  "icons/128x128@2x.png",
+  "icons/icon.icns",
+  "icons/icon.ico"
+]

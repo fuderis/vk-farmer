@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use super::{ Task, VKontakte };
+use super::{ Task, Controller, VKontakte };
 
 use chromedriver_api::{ Session, Tab };
 use tokio::time::{ sleep, Duration };
@@ -8,6 +8,8 @@ use serde_json::Value;
 // Farmer for 'freelikes.online'
 #[derive(Debug)]
 pub struct FreeLikes {
+    control: Arc<Mutex<Controller>>,
+
     pub(crate) profile: String,
     pub(crate) freelikes: Arc<Mutex<Tab>>,
     pub(crate) vkontakte: Arc<Mutex<VKontakte>>,
@@ -15,17 +17,17 @@ pub struct FreeLikes {
 
 impl FreeLikes {
     /// Login to profile
-    pub async fn login<S: Into<String>>(profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
+    pub async fn login<S: Into<String>>(control: Arc<Mutex<Controller>>, profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
         let profile = profile.into();
         
         // open website:
-        let freelikes = session.open("https://freelikes.online/vkontakte/vklike").await?;
+        let freelikes = session.open("https://freelikes.online/vkontakte/vklike").await.map_err(|e| Error::from(fmt!("{e}")))?;
         let mut freelikes_lock = freelikes.lock().await;
         
         let mut vk_lock = vkontakte.lock().await;
 
         // login to account:
-        if freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await?.to_string() == "true" {
+        if freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
             println!("[INFO] ({}) <freelikes.online> Login to account ..", &profile);
 
             let _ = freelikes_lock.inject(&("".to_string() + r#"
@@ -35,10 +37,10 @@ impl FreeLikes {
                 let _btn_login_ = document.querySelector('#form_login button.btnenter');
                 _btn_login_.focus();
                 _btn_login_.click();
-            "#)).await?;
+            "#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
             sleep(Duration::from_secs(1)).await;
 
-            while freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await?.to_string() == "true" {
+            while freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
                 let log = freelikes_lock.inject(r#"
                     window.open = function(url, ...args) {
                         window.url_link = url;
@@ -53,7 +55,7 @@ impl FreeLikes {
                     _btn_link_.dispatchEvent(_click_ev_);
 
                     return window.url_link;
-                "#).await?;
+                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
 
                 let url = log.to_string().replace("'", "").replace("\"", "");
                 if url.starts_with("https://") {
@@ -70,7 +72,7 @@ impl FreeLikes {
                     _click_ev_.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
                                                 
                     _btn_check_.dispatchEvent(_click_ev_);
-                "#).await?;
+                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
 
                 sleep(Duration::from_secs(5)).await;
             }
@@ -81,6 +83,8 @@ impl FreeLikes {
         drop(freelikes_lock);
         drop(vk_lock);
         Ok(Self {
+            control,
+            
             profile,
             freelikes,
             vkontakte
@@ -92,14 +96,14 @@ impl FreeLikes {
         let mut freelikes = self.freelikes.lock().await;
         
         // open page:
-        freelikes.open(&fmt!("https://freelikes.online/earn/{path}")).await?;
+        freelikes.open(&fmt!("https://freelikes.online/earn/{path}")).await.map_err(|e| {dbg!(&e); Error::from(fmt!("{e}"))})?;
 
         // disabling pop-ups:
         freelikes.inject(r#"
             window.open = function(_url, _name, _specs) {
                 return null;
             };
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
 
         Ok(())
     }
@@ -143,7 +147,7 @@ impl FreeLikes {
             }
         
             return null;
-        })();"#)).await?.to_string();
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
 
         match serde_json::from_str(&log) {
             Ok(task) => Ok(Some(task)),
@@ -163,7 +167,7 @@ impl FreeLikes {
                 button_start.focus();
                 button_start.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log)
@@ -181,7 +185,7 @@ impl FreeLikes {
                 button_check.focus();
                 button_check.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -199,7 +203,7 @@ impl FreeLikes {
                 button_remove.focus();
                 button_remove.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -227,11 +231,11 @@ impl FreeLikes {
     }
 
     /// Farming VK likes
-    pub async fn vk_farm_likes(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_likes(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vkontakte/vklike").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -255,7 +259,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
-                    limit -= 1;
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -268,18 +272,16 @@ impl FreeLikes {
     }
 
     /// Farming VK friends
-    pub async fn vk_farm_friends(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_friends(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vkontakte/vkfriend").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
-                    limit -= 1;
-
                     // starting task:
                     println!("[INFO] ({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
                     self.vk_delete_friend(&task.url).await?;
@@ -298,6 +300,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -310,18 +313,16 @@ impl FreeLikes {
     }
 
     /// Farming VK subscribes
-    pub async fn vk_farm_subscribes(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_subscribes(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vkontakte/vkgroup").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
-                    limit -= 1;
-
                     // starting task:
                     println!("[INFO] ({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unsubscribe(&task.url).await?;
@@ -340,6 +341,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -354,7 +356,7 @@ impl FreeLikes {
     /// Close profile session
     pub async fn close(self) -> Result<()> {
         sleep(Duration::from_millis(100)).await;
-        self.freelikes.lock().await.close().await?;
+        self.freelikes.lock().await.close().await.map_err(|e| Error::from(fmt!("{e}")))?;
         
         Ok(())
     }

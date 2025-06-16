@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use super::{ Task, VKontakte };
+use super::{ Task, Controller, VKontakte };
 
 use chromedriver_api::{ Session, Tab };
 use tokio::time::{ sleep, Duration };
@@ -8,6 +8,8 @@ use serde_json::Value;
 // Farmer for 'biglike.org'
 #[derive(Debug)]
 pub struct BigLike {
+    control: Arc<Mutex<Controller>>,
+
     pub(crate) profile: String,
     pub(crate) biglike: Arc<Mutex<Tab>>,
     pub(crate) vkontakte: Arc<Mutex<VKontakte>>
@@ -15,17 +17,17 @@ pub struct BigLike {
 
 impl BigLike {
     /// Login to profile
-    pub async fn login<S: Into<String>>(profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
+    pub async fn login<S: Into<String>>(control: Arc<Mutex<Controller>>, profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
         let profile = profile.into();
         
         // open tabs:
-        let biglike = session.open("https://biglike.org/vklike").await?;
+        let biglike = session.open("https://biglike.org/vklike").await.map_err(|e| Error::from(fmt!("{e}")))?;
         let mut biglike_lock = biglike.lock().await;
         
         let mut vk_lock = vkontakte.lock().await;
 
         // login to account:
-        if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
+        if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
             println!("[INFO] ({}) <biglike.org> Login to account ..", &profile);
 
             let _ = biglike_lock.inject(&("".to_string() + r##"
@@ -39,15 +41,15 @@ impl BigLike {
                 let _btn_login_ = document.querySelector('#form_login button#loginvk');
                 _btn_login_.focus();
                 _btn_login_.click();
-            "##)).await?;
+            "##)).await.map_err(|e| Error::from(fmt!("{e}")))?;
             sleep(Duration::from_secs(1)).await;
 
-            while biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
+            while biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
                 let log = biglike_lock.inject(r#"
                     let _txt_ = document.querySelector('#alerttxt b');
                 
                     return _txt_.textContent;
-                "#).await?.to_string();
+                "#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
 
                 let text = &log[1..log.len()-1];
 
@@ -58,7 +60,7 @@ impl BigLike {
                     let _btn_login_ = document.querySelector('input[value="ВОЙТИ"]');
                     _btn_login_.focus();
                     _btn_login_.click();
-                "#).await?;
+                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
                 sleep(Duration::from_secs(1)).await;
 
                 vk_lock.set_status(&old_status).await?;
@@ -72,6 +74,8 @@ impl BigLike {
         drop(biglike_lock);
         drop(vk_lock);
         Ok(Self {
+            control,
+
             profile,
             biglike,
             vkontakte
@@ -83,14 +87,14 @@ impl BigLike {
         let mut biglike = self.biglike.lock().await;
         
         // open page:
-        biglike.open(&fmt!("https://biglike.org/{path}")).await?;
+        biglike.open(&fmt!("https://biglike.org/{path}")).await.map_err(|e| Error::from(fmt!("{e}")))?;
 
         // disabling pop-ups:
         biglike.inject(r#"
             window.open = function(_url, _name, _specs) {
                 return null;
             };
-        "#).await?;
+        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
 
         Ok(())
     }
@@ -130,7 +134,7 @@ impl BigLike {
             }
         
             return null;
-        })();"#)).await?.to_string();
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
 
         match serde_json::from_str(&log) {
             Ok(task) => Ok(Some(task)),
@@ -150,7 +154,7 @@ impl BigLike {
                 button_start.focus();
                 button_start.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log)
@@ -168,7 +172,7 @@ impl BigLike {
                 button_check.focus();
                 button_check.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -186,7 +190,7 @@ impl BigLike {
                 button_remove.focus();
                 button_remove.click();
             }
-        })();"#)).await?;
+        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -214,18 +218,16 @@ impl BigLike {
     }
 
     /// Farming VK likes
-    pub async fn vk_farm_likes(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_likes(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vklike").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
-                    limit -= 1;
-
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unlike(&task.url).await?;
@@ -244,6 +246,7 @@ impl BigLike {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -256,18 +259,16 @@ impl BigLike {
     }
 
     /// Farming VK friends
-    pub async fn vk_farm_friends(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_friends(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vkfriend").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
-                    limit -= 1;
-
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_delete_friend(&task.url).await?;
@@ -286,6 +287,7 @@ impl BigLike {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -298,18 +300,16 @@ impl BigLike {
     }
 
     /// Farming VK subscribes
-    pub async fn vk_farm_subscribes(&mut self, min_price: usize, mut limit: usize) -> Result<()> {
+    pub async fn vk_farm_subscribes(&mut self, min_price: usize, limit: &mut usize) -> Result<()> {
         // open page with tasks:
         self.open_tasks("vkgroup").await?;
         
-        while limit > 0 {
+        while *limit > 0 && self.control.lock().await.is_alive() {
             println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
-                    limit -= 1;
-
                     // starting task:
                     println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unsubscribe(&task.url).await?;
@@ -328,6 +328,7 @@ impl BigLike {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    *limit -= 1;
                 },
 
                 Some(_) => continue,
@@ -342,7 +343,7 @@ impl BigLike {
     /// Close profile session
     pub async fn close(self) -> Result<()> {
         sleep(Duration::from_millis(100)).await;
-        self.biglike.lock().await.close().await?;
+        self.biglike.lock().await.close().await.map_err(|e| Error::from(fmt!("{e}")))?;
         
         Ok(())
     }

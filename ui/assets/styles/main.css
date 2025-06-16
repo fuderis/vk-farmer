@@ -1,0 +1,502 @@
+:root {
+    --progress-bar-deg: 180deg;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #156fe4;
+  border-radius: 2.5px 0 0 2.5px;
+  border: 1px solid transparent;
+}
+
+@font-face {
+  font-family: 'Roboto Flex';
+  src: url('../fonts/roboto-flex.ttf') format('truetype');
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-weight: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    box-sizing: border-box;
+    align-content: flex-start;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Roboto Flex';
+    font-size: 14px;
+    font-weight: 400;
+    color: white;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+body {
+    background: url("../images/bg.png");
+    background-size: cover;
+    background-position: center;
+}
+
+h1 {
+    font-size: 30px;
+    font-weight: 700;
+}
+
+p {
+    font-size: 20px;
+    font-weight: 400;
+}
+
+
+form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: space-between;
+    width: 100%;
+    height: auto;
+}
+
+form label {
+    user-select: none;
+}
+
+form input {
+    color: black;
+}
+
+form .line {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: auto;
+    margin-top: 5px;
+}
+
+form .line span {
+    display: flex;
+}
+
+form .line.input {
+    font-size: 10px;
+    color: black;
+}
+
+form .line.input label {
+    display: flex;
+    align-items: center;
+    width: 40px;
+    height: 25px;
+    padding-left: 8px;
+    font-weight: 500;
+    background: white;
+    border-radius: 7px 0 0 7px;
+}
+
+form .line.input input {
+    width: calc(100% - 40px);
+    height: 25px;
+    padding: 0 8px 0 5px;
+    font-weight: 300;
+    background: white;
+    border-radius: 0 7px 7px 0;
+}
+
+form .line.switcher {
+    display: flex;
+    font-size: 10px;
+}
+
+form .line.switcher label {
+    display: flex;
+    align-items: center;
+}
+
+form .line.switcher label .switcher {
+    display: block;
+    width: 30px;
+    height: 16px;
+    position: relative;
+    font-weight: 500;
+    background: white;
+    border-radius: 10px;
+}
+
+form .line.switcher label .switcher::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 12px;
+    position: relative;
+    top: 0;
+    left: 0;
+    margin: 2px;
+    border-radius: 50%;
+    background: #5820D9;
+    transition: margin 100ms ease;
+}
+
+form .line.switcher label .text {
+    margin-left: 7px;
+}
+
+form .line.switcher input:checked ~ label .switcher::before {
+    margin-left: calc(30px - 12px - 2px);
+}
+
+form .line.switcher input[type="number"] {
+    width: 35px;
+    height: 25px;
+    padding: 0 8px 0 8px;
+    font-size: 10px;
+    font-weight: 300;
+    background: white;
+    border-radius: 7px 0 0 7px;
+}
+
+form .line.switcher .arrows {
+    display: flex;
+    flex-direction: column;
+    width: 20px;
+    height: 25px;
+    background: white;
+    border-radius: 0 7px 7px 0;
+}
+
+form .line.switcher .arrows button {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 50%;
+}
+
+form .line.switcher .arrows img.icon {
+    width: 10px;
+    height: 10px;
+}
+
+form .line.switcher .arrows button.input-plus img.icon {
+    margin-top: 2px;
+}
+
+form .line.switcher .arrows button.input-minus img.icon {
+    transform: rotate(180deg);
+}
+
+
+input {
+    border: 0;
+    outline: none;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+button, input[type="button"], input[type="submit"] {
+    border: none;
+    background: none;
+    transition: transform 0.2s ease;
+    transform-origin: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+button:hover, input[type="button"]:hover, input[type="submit"]:hover {
+    transform: scale(1.1);
+}
+
+button:active, input[type="button"]:active, input[type="submit"]:active {
+    transform: translateY(2px);
+}
+
+button[disabled], input[type="button"][disabled], input[type="submit"][disabled] {
+    pointer-events: none;
+    opacity: 0.7;
+    cursor: default;
+}
+
+
+button.primary, button.secondary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 130px;
+    height: 30px;
+    font-size: 9px;
+    font-weight: 500;
+    color: white;
+    border-top: 0.5px solid rgba(255, 255, 255, 40%);
+    box-shadow: 0px 0px 2.9000000953674316px 0px rgba(102, 91, 255, 33%), 0px 0px 13.100000381469727px 0px rgba(0, 0, 0, 18%);
+    text-shadow: 0px 1px 1.7000000476837158px rgba(0, 0, 0, 54%);
+    border-radius: 20px;
+    background: linear-gradient(45.875deg, #E958FF 0%, #726EFF 40%, #4BBFF9 65%, #47FFF0 100%);
+}
+
+button.secondary {
+    background: linear-gradient(45.875deg, #7758FF 0%, #9B1FF9 23%, #E828DB 62%, #FFDA47 100%);
+}
+
+
+button.create-bot .center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+button.create-bot .icon {
+    width: 50px;
+    height: 50px;
+}
+
+button.create-bot .name {
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 10px;
+    color: rgba(255,255,255, 90%);
+}
+
+
+button.delete {
+    position: relative;
+}
+
+button.delete::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-left: -5px;
+    margin-top: -5px;
+    width: 20px;
+    height: 20px;
+    /* border: 1px solid green; */
+}
+
+button.delete .icon {
+    width: 12px;
+    height: 12px;
+}
+
+
+#header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: calc(100% - 14px * 2);
+    height: 55px;
+    margin-top: 14px;
+    margin-left: 14px;
+    padding: 0 10px;
+    border-radius: 25px 25px 0 0;
+    background: rgba(0,0,0, 90%);
+}
+
+#header #logo {
+    margin-left: -7px;
+    margin-right: -7px;
+}
+
+#header .info {
+    display: flex;
+    align-items: center;
+}
+
+#header .info .block {
+    margin-left: 7px;
+}
+
+#header .info .title {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: transparent;
+    background: linear-gradient(45.875deg, #47FFF0 0%, #4BBFF9 35%, #9B9BDD 49%, #FF6EB9 67%, #ACFF58 100%);
+    background-clip: text;
+}
+
+#header .info .version {
+    font-size: 10px;
+    font-weight: 400;
+    color: rgba(216, 216, 216, 90%);
+    margin-top: 2px;
+}
+
+#header .buttons {
+    display: flex;
+}
+
+#header .buttons button {
+    margin-left: 12px;
+}
+
+
+#main {
+    display: flex;
+    width: calc(100% - 14px * 2);
+    height: calc(100% - (55px + 14px) - 160px);
+    margin-left: 14px;
+    padding: 10px 5px;
+    background: rgba(0,0,0, 90%);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#main .blocks {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
+}
+
+#main .block {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: calc((100% - 10px * 4) / 4);
+    min-width: 200px;
+    max-width: 250px;
+    height: 255px;
+    padding: 15px;
+    margin: 5px;
+    background: linear-gradient(180deg, rgba(96, 34, 239, 95%) 0%, rgba(17, 14, 91, 95%) 100%);
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+    transform-origin: center;
+}
+
+#main .block:hover {
+    transform: scale(1.1);
+}
+
+#main .block .header {
+    display: flex;
+    width: 100%;
+    height: auto;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#main .block .progress-bar {
+    display: none;
+    position: relative;
+    width: 130px;
+    height: 130px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(var(--progress-bar-deg), #00FFF2 0%, #A4E330 25%, #FFBB00 41%, #E62153 85%);
+    border-radius: 50%;
+    z-index: 9;
+}
+
+#main .block .progress-bar::before {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 122px;
+    height: 122px;
+    top: 0;
+    left: 0;
+    margin: 4px;
+    border-radius: 50%;
+    z-index: -1;
+    background-color: #180638;
+    background-image: linear-gradient(var(--progress-bar-deg), rgba(0, 255, 242, 15%) 0%, rgba(164, 227, 48, 15%) 25%, rgba(255, 187, 0, 15%) 41%, rgba(230, 33, 83, 15%) 85%);
+}
+
+#main .block .progress-bar .percent {
+    font-size: 35px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-shadow: 0px 0px 6px rgba(255, 255, 255, 36%);
+}
+
+#main .block .progress-bar .descr {
+    font-size: 15px;
+    font-weight: 500;
+    color: #E8E8E8;
+    letter-spacing: 0.01em;
+    margin-top: -6px;
+}
+
+#main .block button.stop-farm {
+    display: none;
+}
+
+
+#main .block.active {
+    background: linear-gradient(180deg, rgba(91, 33, 226, 95%) 0%, rgba(50, 13, 89, 95%) 100%);
+}
+
+#main .block.active form.options {
+    display: none;
+}
+
+#main .block.active .progress-bar {
+    display: flex;
+}
+
+#main .block.active button.start-farm {
+    display: none;
+}
+
+#main .block.active button.stop-farm {
+    display: flex;
+}
+
+
+#main button.create-bot {
+    justify-content: center;
+    align-items: center;
+}
+
+#main button.create-bot:active {
+    transform: translateY(2px);
+}
+
+
+#footer {
+    display: flex;
+    width: 100%;
+    height: 160px;
+    padding: 10px;
+    background: rgb(0,0,0);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#logger {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    font-size: 12px;
+    font-weight: 300;
+    color: #3DC1F9;
+}
+
+#logger .line {
+    margin-top: 5px;
+}
