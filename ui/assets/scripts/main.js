@@ -12,6 +12,43 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(e => console.error(e));
 
+    // form update handlers:
+    const blocksContainer = document.querySelector('.blocks');
+    const timers = new Map();
+
+    blocksContainer.addEventListener('input', (event) => {
+        const input = event.target;
+        const block = input.closest('.block');
+        if (!block) return;
+
+        const form = block.querySelector('form');
+        if (!form) return;
+
+        const id = block.getAttribute('target');
+        if (!id) return;
+
+        // reset form timer:
+        if (timers.has(id)) {
+            clearTimeout(timers.get(id));
+        }
+
+        // start form timer:
+        timers.set(id, setTimeout(async () => {
+            // serializing form data:
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            invoke('update_bot', { id, data })
+                .then(_ => {
+                    timers.delete(id);
+                })
+                .catch(e => console.error(e));
+        }, 3000));
+    });
+
     // buttons handlers:
     document.querySelector('#main .blocks').addEventListener('click', (event) => {
         const target = event.target;

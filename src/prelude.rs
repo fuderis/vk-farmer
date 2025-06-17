@@ -4,6 +4,7 @@ pub use crate::error::{ StdResult, Result, Error };
 
 pub use macron::*;
 pub use serde::{ Serialize, Deserialize };
+pub use serde_json::Value;
 
 pub use std::collections::HashMap;
 pub use std::format as fmt;
