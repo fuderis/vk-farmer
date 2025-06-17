@@ -10,9 +10,9 @@ use tokio::time::{ sleep, Duration };
 pub struct Farmer {
     task: Arc<Mutex<Task>>,
     
-    port: String,
-    profile: Profile,
-    settings: Settings,
+    pub(crate) port: String,
+    pub(crate) profile: Profile,
+    pub(crate) settings: Settings,
     
     session: Option<Session>,
     vkontakte: Arc<Mutex<VKontakte>>,
@@ -23,6 +23,8 @@ pub struct Farmer {
 impl Farmer {
     /// Login to profile
     pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Arc<Mutex<Self>>> {
+        info!("({}) Starting bot session ..", &profile.name);
+
         let port = port.into();
         
         // run session:
@@ -36,7 +38,7 @@ impl Farmer {
         let freelikes = FreeLikes::login(task.clone(), &profile.name, &mut session, vkontakte.clone()).await?;
         let biglike = BigLike::login(task.clone(), &profile.name, &mut session, vkontakte.clone()).await?;
 
-        println!("[INFO] ({}) Session is ready.", &profile.name);
+        info!("({}) Session is ready.", &profile.name);
 
         Ok(Arc::new(Mutex::new(
             Self {
@@ -62,18 +64,18 @@ impl Farmer {
 
         loop {
             if !self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await? {
-                println!("[INFO] ({}) Farming canceled! ..", self.profile.name);
+                info!("({}) Farming canceled! ..", self.profile.name);
                 return Ok(());
             }
 
             if !self.task.lock().await.check_limits() {
-                println!("[INFO] ({}) All tasks is completed! ..", self.profile.name);
+                info!("({}) All tasks is completed! ..", self.profile.name);
             } else {
-                println!("[INFO] ({}) Tasks is over, timeout for {} minutes ..", self.profile.name, self.settings.pause_delay);
+                info!("({}) Tasks is over, timeout for {} minutes ..", self.profile.name, self.settings.pause_delay);
 
                 for _ in 0..(self.settings.pause_delay as u64 * 60) {
                     if self.task.lock().await.is_closed() {
-                        println!("[INFO] ({}) Farming canceled! ..", self.profile.name);
+                        info!("({}) Farming canceled! ..", self.profile.name);
                         return Ok(());
                     }
                     
@@ -93,16 +95,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <freelikes.online> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <freelikes.online> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.name);
+                        err!("({}) <freelikes.online> {e}", self.profile.name);
                     }
                 }
             }
@@ -116,16 +118,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <freelikes.online> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <freelikes.online> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.name);
+                        err!("({}) <freelikes.online> {e}", self.profile.name);
                     }
                 }
             }
@@ -139,16 +141,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <freelikes.online> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <freelikes.online> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <freelikes.online> {e}", self.profile.name);
+                        err!("({}) <freelikes.online> {e}", self.profile.name);
                     }
                 }
             }
@@ -162,16 +164,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <biglike.org> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <biglike.org> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.name);
+                        err!("({}) <biglike.org> {e}", self.profile.name);
                     }
                 }
             }
@@ -185,16 +187,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <biglike.org> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <biglike.org> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.name);
+                        err!("({}) <biglike.org> {e}", self.profile.name);
                     }
                 }
             }
@@ -208,16 +210,16 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                println!("[INFO] ({}) <biglike.org> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                info!("({}) <biglike.org> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => eprintln!("[ERROR] ({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
                         }
                     }
 
                     Err(e) => {
-                        eprintln!("[ERROR] ({}) <biglike.org> {e}", self.profile.name);
+                        err!("({}) <biglike.org> {e}", self.profile.name);
                     }
                 }
             }
@@ -228,7 +230,7 @@ impl Farmer {
 
     /// Close profile session
     pub async fn close(&mut self) -> Result<()> {
-        println!("[INFO] ({}) Closing bot session ..", self.profile.name);
+        info!("({}) Closing bot session ..", self.profile.name);
 
         if let Some(session) = self.session.take() {
             session.close().await.map_err(|e| Error::from(fmt!("{e}")))?;

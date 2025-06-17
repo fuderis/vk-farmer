@@ -28,7 +28,7 @@ impl FreeLikes {
 
         // login to account:
         if freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
-            println!("[INFO] ({}) <freelikes.online> Login to account ..", &profile);
+            info!("({}) <freelikes.online> Login to account ..", &profile);
 
             let _ = freelikes_lock.inject(&("".to_string() + r#"
                 let _inp_link_ = document.querySelector('#form_login input');
@@ -78,7 +78,7 @@ impl FreeLikes {
             }
         }
 
-        println!("[INFO] ({}) <freelikes.online> Session is ready.", &profile);
+        info!("({}) <freelikes.online> Session is ready.", &profile);
 
         drop(freelikes_lock);
         drop(vk_lock);
@@ -236,29 +236,29 @@ impl FreeLikes {
         self.open_tasks("vkontakte/vklike").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
+            info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unlike(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_like(&task.url).await? {
-                        println!("[INFO] ({}) <freelikes.online> Task is broken, removing ..", self.profile);
+                        info!("({}) <freelikes.online> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <freelikes.online> Checking task ..", self.profile);
+                    info!("({}) <freelikes.online> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    info!("({}) <freelikes.online> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
@@ -278,29 +278,29 @@ impl FreeLikes {
         self.open_tasks("vkontakte/vkfriend").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
+            info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
                     self.vk_delete_friend(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_add_friend(&task.url).await? {
-                        println!("[INFO] ({}) <freelikes.online> Task is broken, removing ..", self.profile);
+                        info!("({}) <freelikes.online> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <freelikes.online> Checking task ..", self.profile);
+                    info!("({}) <freelikes.online> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    info!("({}) <freelikes.online> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
@@ -320,29 +320,29 @@ impl FreeLikes {
         self.open_tasks("vkontakte/vkgroup").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
+            info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <freelikes.online> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unsubscribe(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_subscribe(&task.url).await? {
-                        println!("[INFO] ({}) <freelikes.online> Task is broken, removing ..", self.profile);
+                        info!("({}) <freelikes.online> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <freelikes.online> Checking task ..", self.profile);
+                    info!("({}) <freelikes.online> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    info!("({}) <freelikes.online> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },

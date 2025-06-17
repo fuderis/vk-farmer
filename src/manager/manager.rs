@@ -20,7 +20,7 @@ impl Manager {
     }
 
     /// Start bot session
-    pub async fn start_bot<S: Into<String>>(&mut self, id: S, profile: Profile, settings: Settings) -> Result<()> {
+    pub async fn start_bot<S: Into<String>>(&mut self, id: S, profile: Profile, settings: Settings) -> Result<()> {        
         // check name for unique:
         if self.bots.contains_key(&profile.name) {
             return Err(Error::BotNameIDIsBusy.into());

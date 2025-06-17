@@ -13,6 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(e => console.error(e));
 
+    // update programm logs:
+    setInterval(() => {
+        let logger = document.querySelector('#logger');
+            
+        invoke("update_logger", { })
+            .then(logs => {
+                logs.forEach((log) => {
+                    logger.insertAdjacentHTML('beforeend', log);
+                });
+            })
+            .catch(e => console.error(e));
+    }, 1000);
+
     // update bot limits percentage:
     setInterval(() => {
         document.querySelectorAll('#main .blocks .block.active').forEach((block) => {
@@ -24,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch(e => console.error(e));
         });
-    }, 5000);
+    }, 3000);
 
     // init buttons 'start all' & 'stop all':
     document.querySelector('#header button.start-all').addEventListener('click', (e) => {

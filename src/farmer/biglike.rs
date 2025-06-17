@@ -28,7 +28,7 @@ impl BigLike {
 
         // login to account:
         if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
-            println!("[INFO] ({}) <biglike.org> Login to account ..", &profile);
+            info!("({}) <biglike.org> Login to account ..", &profile);
 
             let _ = biglike_lock.inject(&("".to_string() + r##"
                 let _btn_enter_ = document.querySelector('a[data-target="#login"]');
@@ -69,7 +69,7 @@ impl BigLike {
             }
         }
 
-        println!("[INFO] ({profile}) <biglike.org> Session is ready.");
+        info!("({profile}) <biglike.org> Session is ready.");
 
         drop(biglike_lock);
         drop(vk_lock);
@@ -223,29 +223,29 @@ impl BigLike {
         self.open_tasks("vklike").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
+            info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unlike(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_like(&task.url).await? {
-                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        info!("({}) <biglike.org> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
+                    info!("({}) <biglike.org> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    info!("({}) <biglike.org> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
@@ -265,29 +265,29 @@ impl BigLike {
         self.open_tasks("vkfriend").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
+            info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_delete_friend(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_add_friend(&task.url).await? {
-                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        info!("({}) <biglike.org> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
+                    info!("({}) <biglike.org> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    info!("({}) <biglike.org> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
@@ -307,29 +307,29 @@ impl BigLike {
         self.open_tasks("vkgroup").await?;
         
         while *limit > 0 && !self.task.lock().await.is_closed() {
-            println!("[INFO] ({}) <biglike.org> Searching task..", self.profile);
+            info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
             match self.next_task().await? {
                 Some(task) if task.price >= min_price => {
                     // starting task:
-                    println!("[INFO] ({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
+                    info!("({}) <biglike.org> Starting task ({}) ..", self.profile, task.url);
                     self.vk_unsubscribe(&task.url).await?;
                     self.start_task(&task).await?;
 
                     // executing task:
                     if !self.vk_subscribe(&task.url).await? {
-                        println!("[INFO] ({}) <biglike.org> Task is broken, removing ..", self.profile);
+                        info!("({}) <biglike.org> Task is broken, removing ..", self.profile);
                         self.remove_task(&task).await?;
 
                         continue;
                     }
 
                     // checking task:
-                    println!("[INFO] ({}) <biglike.org> Checking task ..", self.profile);
+                    info!("({}) <biglike.org> Checking task ..", self.profile);
                     self.check_task(&task).await?;
 
-                    println!("[INFO] ({}) <biglike.org> Task completed!", self.profile);
+                    info!("({}) <biglike.org> Task completed!", self.profile);
                     self.task.lock().await.complete_task();
                     *limit -= 1;
                 },

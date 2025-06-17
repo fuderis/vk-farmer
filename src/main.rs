@@ -4,11 +4,53 @@ use tauri::State;
 
 use std::{ fs, time::{SystemTime, UNIX_EPOCH} };
 
-/// Generates an unique ID
-fn uniq_id() -> String {
-    let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    let random: u16 = rand::random();
-    format!("{}{:04x}", millis, random)
+static LOGGER: Logger = Logger { logs: StdMutex::new(vec![]) };
+
+/// The programm logger
+struct Logger {
+    pub logs: StdMutex<Vec<String>>,
+}
+
+impl Logger {
+    /// Takes all logger logs
+    pub fn take(&self) -> Vec<String> {
+        let mut logs_lock = self.logs.lock().unwrap();
+        std::mem::take(&mut *logs_lock)
+    }
+}
+
+impl log::Log for Logger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::Level::Info
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let mut log = fmt!("[{}] {}", record.level(), record.args());
+
+            // printing to terminal:
+            println!("{log}");
+
+            // preparing log to HTML:
+            for (k, v) in [
+                ("<", "&lt;"),
+                (">", "&gt;"),
+            ] {
+                log = log.replace(k, v);
+            }
+            let log = fmt!(r#"<div class="line">{log}</div>"#);
+            
+            self.logs.lock().unwrap().push(log);
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+/// Updates logger lines
+#[tauri::command]
+async fn update_logger() -> StdResult<Vec<String>, String> {
+    Ok(LOGGER.take())
 }
 
 /// Get bot profiles
@@ -157,6 +199,9 @@ async fn stop_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdRes
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    log::set_logger(&LOGGER)?;
+    log::set_max_level(log::LevelFilter::Info);
+
     // read/write config:
     let config = Arc::new(Mutex::new(Config::read_or_write("config.json")?));
     // init bots manager:
@@ -167,6 +212,8 @@ async fn main() -> Result<()> {
         .manage(config)
         .manage(manager)
         .invoke_handler(tauri::generate_handler![
+            update_logger,
+            
             get_bots,
             update_bot_limits,
 
@@ -180,4 +227,12 @@ async fn main() -> Result<()> {
         .run(tauri::generate_context!())?;
 
     Ok(())
+}
+
+
+/// Generates an unique ID
+fn uniq_id() -> String {
+    let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+    let random: u16 = rand::random();
+    format!("{}{:04x}", millis, random)
 }
