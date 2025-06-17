@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            block.querySelector('.name').textContent = data.name;
+
             invoke('update_bot', { id, data: JSON.stringify(data) })
                 .then(_ => {
                     timers.delete(id);
