@@ -13,9 +13,34 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(e => console.error(e));
 
+    // update bot limits percentage:
+    setInterval(() => {
+        document.querySelectorAll('#main .blocks .block.active').forEach((block) => {
+            let id = block.getAttribute('target');
+
+            invoke("update_bot_limits", { id })
+                .then(percents => {
+                    block.querySelector('.progress-bar .value').textContent = percents;
+                })
+                .catch(e => console.error(e));
+        });
+    }, 5000);
+
+    // init buttons 'start all' & 'stop all':
+    document.querySelector('#header button.start-all').addEventListener('click', (e) => {
+        document.querySelectorAll('#main .blocks .block:not(.create-bot):not(.active)').forEach((block) => {
+            block.querySelector('button.start-farm').click();
+        });
+    });
+    document.querySelector('#header button.stop-all').addEventListener('click', (e) => {
+        document.querySelectorAll('#main .blocks .block:not(.create-bot).active').forEach((block) => {
+            block.querySelector('button.stop-farm').click();
+        });
+    });
+
     // form update handlers:
-    document.querySelector('.blocks').addEventListener('input', (event) => {
-        let input = event.target;
+    document.querySelector('#main .blocks').addEventListener('input', (e) => {
+        let input = e.target;
         let id = input.getAttribute('target');
 
         let block = document.querySelector(`.block[target="${id}"]`);
@@ -46,16 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
             block.querySelector('.name').textContent = data.name;
 
             invoke('update_bot', { id, data: JSON.stringify(data) })
-                .then(_ => {
+                .then(limits => {
                     timers.delete(id);
                 })
                 .catch(e => console.error(e));
-        }, 2000));
+        }, 1000));
     });
 
     // buttons handlers:
-    document.querySelector('#main .blocks').addEventListener('click', (event) => {
-        let target = event.target;
+    document.querySelector('#main .blocks').addEventListener('click', (e) => {
+        let target = e.target;
 
         // creating a new bot profile:
         if (target.closest('.create-bot')) {
@@ -78,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let bot = document.querySelector(`.block[target="${id}"]`);
 
             button.setAttribute('disabled', '');
+            bot.setAttribute('disabled', '');
 
             invoke("delete_bot", { id })
                 .then(_ => {
@@ -90,16 +116,18 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (target.closest('.start-farm')) {
             let button = target.closest('.start-farm');
             let id = button.getAttribute("target");
-            let bot = document.querySelector(`.block[target="${id}"]`);
+            let block = document.querySelector(`.block[target="${id}"]`);
 
-            button.setAttribute('disabled', '');
+            block.setAttribute('disabled', '');
             
             invoke("start_bot", { id })
-                .then(r => {})
+                .then(_ => {
+                    block.querySelector('.progress-bar').setAttribute('completed', '0');
+                    
+                    block.removeAttribute('disabled', '');
+                    block.classList.add("active");
+                })
                 .catch(e => console.error(e));
-            
-            button.removeAttribute('disabled');
-            bot.classList.add("active");
         }
 
         // stoping farming:
@@ -108,14 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let id = button.getAttribute("target");
             let bot = document.querySelector(`.block[target="${id}"]`);
 
-            button.setAttribute('disabled', '');
+            bot.setAttribute('disabled', '');
 
             invoke("stop_bot", { id })
-                .then(r => {})
+                .then(_ => {
+                    bot.classList.remove("active");
+                    bot.removeAttribute('disabled', '');
+                })
                 .catch(e => console.error(e));
-
-            button.removeAttribute('disabled');
-            bot.classList.remove("active");
         }
     });
 });

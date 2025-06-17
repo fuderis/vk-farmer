@@ -1,14 +1,14 @@
 {
   "profiles": {
-    "17501196004495a17": {
-      "name": "17501196004495a17",
-      "vk_id": "98271349876234",
-      "farm_likes": false,
-      "likes_limit": 55,
+    "1750168475456329b": {
+      "name": "Bot1",
+      "vk_id": "565898997",
+      "farm_likes": true,
+      "likes_limit": 100,
       "farm_friends": true,
-      "friends_limit": 20,
-      "farm_subscribes": false,
-      "subscribes_limit": 2
+      "friends_limit": 25,
+      "farm_subscribes": true,
+      "subscribes_limit": 25
     }
   },
   "settings": {

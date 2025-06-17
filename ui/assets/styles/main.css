@@ -48,17 +48,6 @@ body {
     background-position: center;
 }
 
-h1 {
-    font-size: 30px;
-    font-weight: 700;
-}
-
-p {
-    font-size: 20px;
-    font-weight: 400;
-}
-
-
 form {
     display: flex;
     flex-direction: column;
@@ -89,14 +78,14 @@ form .line span {
 }
 
 form .line.input {
-    font-size: 10px;
+    font-size: 12px;
     color: black;
 }
 
 form .line.input label {
     display: flex;
     align-items: center;
-    width: 40px;
+    width: 50px;
     height: 25px;
     padding-left: 8px;
     font-weight: 500;
@@ -105,7 +94,7 @@ form .line.input label {
 }
 
 form .line.input input {
-    width: calc(100% - 40px);
+    width: calc(100% - 50px);
     height: 25px;
     padding: 0 8px 0 5px;
     font-weight: 300;
@@ -115,7 +104,7 @@ form .line.input input {
 
 form .line.switcher {
     display: flex;
-    font-size: 10px;
+    font-size: 12px;
 }
 
 form .line.switcher label {
@@ -156,10 +145,10 @@ form .line.switcher input:checked ~ label .switcher::before {
 }
 
 form .line.switcher input[type="number"] {
-    width: 35px;
+    width: 40px;
     height: 25px;
     padding: 0 8px 0 8px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 300;
     background: white;
     border-radius: 7px 0 0 7px;
@@ -235,8 +224,8 @@ button.primary, button.secondary {
     justify-content: center;
     align-items: center;
     width: 130px;
-    height: 30px;
-    font-size: 9px;
+    height: 35px;
+    font-size: 12px;
     font-weight: 500;
     color: white;
     border-top: 0.5px solid rgba(255, 255, 255, 40%);
@@ -309,8 +298,10 @@ button.delete .icon {
 }
 
 #header #logo {
-    margin-left: -7px;
-    margin-right: -7px;
+    width: 55px;
+    width: 55px;
+    margin-left: -10px;
+    margin-right: -10px;
 }
 
 #header .info {
@@ -319,11 +310,11 @@ button.delete .icon {
 }
 
 #header .info .block {
-    margin-left: 7px;
+    margin-left: 9px;
 }
 
 #header .info .title {
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 900;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -333,7 +324,7 @@ button.delete .icon {
 }
 
 #header .info .version {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 400;
     color: rgba(216, 216, 216, 90%);
     margin-top: 2px;
@@ -374,9 +365,9 @@ button.delete .icon {
     justify-content: space-between;
     align-items: center;
     width: calc((100% - 10px * 4) / 4);
-    min-width: 200px;
-    max-width: 250px;
-    height: 255px;
+    min-width: 250px;
+    max-width: 260px;
+    height: 300px;
     padding: 15px;
     margin: 5px;
     background: linear-gradient(180deg, rgba(96, 34, 239, 95%) 0%, rgba(17, 14, 91, 95%) 100%);
@@ -387,6 +378,13 @@ button.delete .icon {
 
 #main .block:hover {
     transform: scale(1.1);
+}
+
+#main .block[disabled] button,
+#main .block[disabled] form {
+    pointer-events: none;
+    opacity: 0.7;
+    cursor: default;
 }
 
 #main .block .header {
@@ -492,7 +490,7 @@ button.delete .icon {
     width: 100%;
     height: 100%;
     flex-direction: column;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 300;
     color: #3DC1F9;
 }

@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use super::{ Task, Controller, VKontakte };
+use crate::{ prelude::*, Task };
+use super::{ FarmTask, VKontakte };
 
 use chromedriver_api::{ Session, Tab };
 use tokio::time::{ sleep, Duration };
@@ -8,8 +8,8 @@ use serde_json::Value;
 // Farmer for 'freelikes.online'
 #[derive(Debug)]
 pub struct FreeLikes {
-    control: Arc<Mutex<Controller>>,
-
+    task: Arc<Mutex<Task>>,
+    
     pub(crate) profile: String,
     pub(crate) freelikes: Arc<Mutex<Tab>>,
     pub(crate) vkontakte: Arc<Mutex<VKontakte>>,
@@ -17,7 +17,7 @@ pub struct FreeLikes {
 
 impl FreeLikes {
     /// Login to profile
-    pub async fn login<S: Into<String>>(control: Arc<Mutex<Controller>>, profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
+    pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, profile: S, session: &mut Session, vkontakte: Arc<Mutex<VKontakte>>) -> Result<Self> {
         let profile = profile.into();
         
         // open website:
@@ -83,11 +83,11 @@ impl FreeLikes {
         drop(freelikes_lock);
         drop(vk_lock);
         Ok(Self {
-            control,
+            task,
             
             profile,
             freelikes,
-            vkontakte
+            vkontakte,
         })
     }
 
@@ -109,7 +109,7 @@ impl FreeLikes {
     }
 
     /// Search next task
-    async fn next_task(&mut self) -> Result<Option<Task>> {
+    async fn next_task(&mut self) -> Result<Option<FarmTask>> {
         let mut freelikes = self.freelikes.lock().await;
 
         // searching next task:
@@ -156,7 +156,7 @@ impl FreeLikes {
     }
 
     /// Start task
-    async fn start_task(&mut self, task: &Task) -> Result<Value> {
+    async fn start_task(&mut self, task: &FarmTask) -> Result<Value> {
         let mut freelikes = self.freelikes.lock().await;
 
         // click to 'start-task' button:
@@ -174,7 +174,7 @@ impl FreeLikes {
     }
 
     /// Check task
-    async fn check_task(&mut self, task: &Task) -> Result<()> {
+    async fn check_task(&mut self, task: &FarmTask) -> Result<()> {
         let mut freelikes = self.freelikes.lock().await;
 
         // click to 'check task' button
@@ -192,7 +192,7 @@ impl FreeLikes {
     }
 
     /// Remove task
-    async fn remove_task(&mut self, task: &Task) -> Result<()> {
+    async fn remove_task(&mut self, task: &FarmTask) -> Result<()> {
         let mut freelikes = self.freelikes.lock().await;
 
         // click to 'remove task' button
@@ -235,7 +235,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vklike").await?;
         
-        while *limit > 0 && self.control.lock().await.is_alive() {
+        while *limit > 0 && !self.task.lock().await.is_closed() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -259,6 +259,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
 
@@ -276,7 +277,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vkfriend").await?;
         
-        while *limit > 0 && self.control.lock().await.is_alive() {
+        while *limit > 0 && !self.task.lock().await.is_closed() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -300,6 +301,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
 
@@ -317,7 +319,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vkgroup").await?;
         
-        while *limit > 0 && self.control.lock().await.is_alive() {
+        while *limit > 0 && !self.task.lock().await.is_closed() {
             println!("[INFO] ({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -341,6 +343,7 @@ impl FreeLikes {
                     self.check_task(&task).await?;
 
                     println!("[INFO] ({}) <freelikes.online> Task completed!", self.profile);
+                    self.task.lock().await.complete_task();
                     *limit -= 1;
                 },
 
@@ -354,9 +357,8 @@ impl FreeLikes {
     }
 
     /// Close profile session
-    pub async fn close(self) -> Result<()> {
-        sleep(Duration::from_millis(100)).await;
-        self.freelikes.lock().await.close().await.map_err(|e| Error::from(fmt!("{e}")))?;
+    pub async fn close(&mut self) -> Result<()> {
+        self.task.lock().await.close();
         
         Ok(())
     }

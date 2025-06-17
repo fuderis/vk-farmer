@@ -37,6 +37,8 @@ async fn get_bots(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<Vec<String
 
                 ("__FARM_SUBSCRIBES__", if profile.farm_subscribes { "checked" }else{ "" }),
                 ("__SUBSCRIBES_LIMIT__", &profile.subscribes_limit.to_string()[..]),
+
+                ("__LIMITS__", &(profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()[..]),
             ] {
                 block = block.replace(from, to);
             }
@@ -46,6 +48,13 @@ async fn get_bots(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<Vec<String
         .collect::<Vec<_>>();
 
     Ok(profiles)
+}
+
+/// Updates bot limits percentage
+#[tauri::command]
+async fn update_bot_limits(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdResult<usize, String> {
+    let percent = manager.lock().await.get_bot_limits_percentage(&id).await.map_err(|e| e.to_string())?;
+    Ok(percent)
 }
 
 /// Creates a new bot
@@ -75,6 +84,8 @@ async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, 
 
         ("__FARM_SUBSCRIBES__", if profile.farm_subscribes { "checked" }else{ "" }),
         ("__SUBSCRIBES_LIMIT__", &profile.subscribes_limit.to_string()[..]),
+
+        ("__LIMITS__", &(profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()[..]),
     ] {
         block = block.replace(from, to);
     }
@@ -99,7 +110,7 @@ async fn delete_bot(id: String, config: State<'_, Arc<Mutex<Config>>>) -> StdRes
 
 /// Updates bot data
 #[tauri::command]
-async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
+async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<usize, String> {
     let mut config = config.lock().await;
     let profile = config.profiles.get_mut(&id).ok_or(Error::InvalidBotNameID.to_string())?;
 
@@ -107,16 +118,21 @@ async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config
 
     profile.name = data.name.to_string();
     profile.vk_id = data.vk_id.to_string();
+
     profile.farm_likes = data.farm_likes;
     profile.likes_limit = data.likes_limit;
+
     profile.farm_friends = data.farm_friends;
     profile.friends_limit = data.friends_limit;
+
     profile.farm_subscribes = data.farm_subscribes;
     profile.subscribes_limit = data.subscribes_limit;
 
+    let limits = profile.likes_limit + profile.friends_limit + profile.subscribes_limit;
+
     config.save().map_err(|e| e.to_string())?;
     
-    Ok(String::new())
+    Ok(limits)
 }
 
 /// Start bot handler
@@ -125,7 +141,7 @@ async fn start_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>, config: 
     let config = config.lock().await;
     let profile = config.profiles.get(&id).ok_or(Error::InvalidBotNameID.to_string())?;
     
-    manager.lock().await.start_bot(profile.clone(), config.settings.clone()).await.unwrap();
+    manager.lock().await.start_bot(id, profile.clone(), config.settings.clone()).await.map_err(|e| e.to_string())?;
 
     Ok(String::new())
 }
@@ -133,7 +149,7 @@ async fn start_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>, config: 
 /// Stop bot handler
 #[tauri::command]
 async fn stop_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdResult<String, String> {
-    manager.lock().await.stop_bot(&id).await.unwrap();
+    manager.lock().await.stop_bot(&id).await.map_err(|e| e.to_string())?;
 
     Ok(String::new())
 }
@@ -152,13 +168,14 @@ async fn main() -> Result<()> {
         .manage(manager)
         .invoke_handler(tauri::generate_handler![
             get_bots,
+            update_bot_limits,
 
             create_bot,
             delete_bot,
             update_bot,
 
             start_bot,
-            stop_bot
+            stop_bot,
         ])
         .run(tauri::generate_context!())?;
 
