@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 logs.forEach((log) => {
                     logger.insertAdjacentHTML('beforeend', log);
                 });
+
+                logger.scrollTop += logger.scrollHeight;
             })
             .catch(e => console.error(e));
     }, 1000);

@@ -493,6 +493,8 @@ button.delete .icon {
     font-size: 14px;
     font-weight: 300;
     color: #3DC1F9;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #logger .line {

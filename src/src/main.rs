@@ -2,7 +2,7 @@
 use app::{ prelude::*, Manager, Config, Profile };
 use tauri::State;
 
-use std::{ fs, time::{SystemTime, UNIX_EPOCH} };
+use std::time;
 
 static LOGGER: Logger = Logger { logs: StdMutex::new(vec![]) };
 
@@ -26,19 +26,23 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let mut log = fmt!("[{}] {}", record.level(), record.args());
+            let log = fmt!("[{}] {}", record.level(), record.args());
 
             // printing to terminal:
             println!("{log}");
 
-            // preparing log to HTML:
+            // preparing log message:
+            let mut msg = log;
             for (k, v) in [
                 ("<", "&lt;"),
                 (">", "&gt;"),
             ] {
-                log = log.replace(k, v);
+                msg = msg.replace(k, v);
             }
-            let log = fmt!(r#"<div class="line">{log}</div>"#);
+
+            let log = app::templates::gen_log_line(vec![
+                ("__LOG__".to_owned(), msg),
+            ]);
             
             self.logs.lock().unwrap().push(log);
         }
@@ -56,34 +60,28 @@ async fn update_logger() -> StdResult<Vec<String>, String> {
 /// Get bot profiles
 #[tauri::command]
 async fn get_bots(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<Vec<String>, String> {
-    let template = fs::read_to_string("ui/components/profile.html").map_err(|e| e.to_string())?;
     let config = config.lock().await;
     
     // reading profiles:
     let profiles = config.profiles.iter()
         .map(|(id, profile)| {
-            let mut block = template.clone();
+            let block = app::templates::gen_bot_profile(vec![
+                ("__ID__".to_owned(), id.clone()),
 
-            // replacing bot data:
-            for (from, to) in [
-                ("__ID__", &id[..]),
+                ("__NAME__".to_owned(), profile.name.clone()),
+                ("__VK_ID__".to_owned(), profile.vk_id.clone()),
 
-                ("__NAME__", &profile.name[..]),
-                ("__VK_ID__", &profile.vk_id[..]),
+                ("__FARM_LIKES__".to_owned(), if profile.farm_likes { "checked".to_owned() }else{ "".to_owned() }),
+                ("__LIKES_LIMIT__".to_owned(), profile.likes_limit.to_string()),
 
-                ("__FARM_LIKES__", if profile.farm_likes { "checked" }else{ "" }),
-                ("__LIKES_LIMIT__", &profile.likes_limit.to_string()[..]),
+                ("__FARM_FRIENDS__".to_owned(), if profile.farm_friends { "checked".to_owned() }else{ "".to_owned() }),
+                ("__FRIENDS_LIMIT__".to_owned(), profile.friends_limit.to_string()),
 
-                ("__FARM_FRIENDS__", if profile.farm_friends { "checked" }else{ "" }),
-                ("__FRIENDS_LIMIT__", &profile.friends_limit.to_string()[..]),
+                ("__FARM_SUBSCRIBES__".to_owned(), if profile.farm_subscribes { "checked".to_owned() }else{ "".to_owned() }),
+                ("__SUBSCRIBES_LIMIT__".to_owned(), profile.subscribes_limit.to_string()),
 
-                ("__FARM_SUBSCRIBES__", if profile.farm_subscribes { "checked" }else{ "" }),
-                ("__SUBSCRIBES_LIMIT__", &profile.subscribes_limit.to_string()[..]),
-
-                ("__LIMITS__", &(profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()[..]),
-            ] {
-                block = block.replace(from, to);
-            }
+                ("__LIMITS__".to_owned(), (profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()),
+            ]);
 
             block
         })
@@ -102,7 +100,6 @@ async fn update_bot_limits(id: String, manager: State<'_, Arc<Mutex<Manager>>>) 
 /// Creates a new bot
 #[tauri::command]
 async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
-    let mut block = fs::read_to_string("ui/components/profile.html").map_err(|e| e.to_string())?;
     let mut config = config.lock().await;
 
     let id: String = uniq_id();
@@ -111,26 +108,23 @@ async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, 
         ..Profile::default()
     };
 
-    // replacing bot data:
-    for (from, to) in [
-        ("__ID__", &id[..]),
+    let block = app::templates::gen_bot_profile(vec![
+        ("__ID__".to_owned(), id.clone()),
 
-        ("__NAME__", &profile.name[..]),
-        ("__VK_ID__", &profile.vk_id[..]),
+        ("__NAME__".to_owned(), profile.name.clone()),
+        ("__VK_ID__".to_owned(), profile.vk_id.clone()),
 
-        ("__FARM_LIKES__", if profile.farm_likes { "checked" }else{ "" }),
-        ("__LIKES_LIMIT__", &profile.likes_limit.to_string()[..]),
+        ("__FARM_LIKES__".to_owned(), if profile.farm_likes { "checked".to_owned() }else{ "".to_owned() }),
+        ("__LIKES_LIMIT__".to_owned(), profile.likes_limit.to_string()),
 
-        ("__FARM_FRIENDS__", if profile.farm_friends { "checked" }else{ "" }),
-        ("__FRIENDS_LIMIT__", &profile.friends_limit.to_string()[..]),
+        ("__FARM_FRIENDS__".to_owned(), if profile.farm_friends { "checked".to_owned() }else{ "".to_owned() }),
+        ("__FRIENDS_LIMIT__".to_owned(), profile.friends_limit.to_string()),
 
-        ("__FARM_SUBSCRIBES__", if profile.farm_subscribes { "checked" }else{ "" }),
-        ("__SUBSCRIBES_LIMIT__", &profile.subscribes_limit.to_string()[..]),
+        ("__FARM_SUBSCRIBES__".to_owned(), if profile.farm_subscribes { "checked".to_owned() }else{ "".to_owned() }),
+        ("__SUBSCRIBES_LIMIT__".to_owned(), profile.subscribes_limit.to_string()),
 
-        ("__LIMITS__", &(profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()[..]),
-    ] {
-        block = block.replace(from, to);
-    }
+        ("__LIMITS__".to_owned(), (profile.likes_limit + profile.friends_limit + profile.subscribes_limit).to_string()),
+    ]);
 
     config.profiles.insert(id, profile);
     config.save().map_err(|e| e.to_string())?;
@@ -232,6 +226,8 @@ async fn main() -> Result<()> {
 
 /// Generates an unique ID
 fn uniq_id() -> String {
+    use time::{ SystemTime, UNIX_EPOCH };
+    
     let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
     let random: u16 = rand::random();
     format!("{}{:04x}", millis, random)
