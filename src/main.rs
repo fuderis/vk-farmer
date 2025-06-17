@@ -99,37 +99,20 @@ async fn delete_bot(id: String, config: State<'_, Arc<Mutex<Config>>>) -> StdRes
 
 /// Updates bot data
 #[tauri::command]
-async fn update_bot(id: String, data: Value, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
+async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
     let mut config = config.lock().await;
     let profile = config.profiles.get_mut(&id).ok_or(Error::InvalidBotNameID.to_string())?;
 
-    if data.get("name").is_some() {
-        profile.name = data.get("name").unwrap().to_string();
-    }
-    if data.get("vk-id").is_some() {
-        profile.vk_id = data.get("vk-id").unwrap().to_string();
-    }
+    let data: Profile = serde_json::from_str(&data).map_err(|e| e.to_string())?;
 
-    if data.get("farm-likes").is_some() {
-        profile.farm_likes = data.get("farm-likes").unwrap().as_str().unwrap() == "true";
-    }
-    if data.get("likes-limit").is_some() {
-        profile.likes_limit = data.get("likes-limit").unwrap().to_string().parse::<usize>().unwrap();
-    }
-
-    if data.get("farm-friends").is_some() {
-        profile.farm_friends = data.get("farm-friends").unwrap().as_str().unwrap() == "true";
-    }
-    if data.get("friends-limit").is_some() {
-        profile.friends_limit = data.get("friends-limit").unwrap().to_string().parse::<usize>().unwrap();
-    }
-
-    if data.get("farm-subscribes").is_some() {
-        profile.farm_subscribes = data.get("farm-subscribes").unwrap().as_str().unwrap() == "true";
-    }
-    if data.get("subscribes-limit").is_some() {
-        profile.subscribes_limit = data.get("subscribes-limit").unwrap().to_string().parse::<usize>().unwrap();
-    }
+    profile.name = data.name.to_string();
+    profile.vk_id = data.vk_id.to_string();
+    profile.farm_likes = data.farm_likes;
+    profile.likes_limit = data.likes_limit;
+    profile.farm_friends = data.farm_friends;
+    profile.friends_limit = data.friends_limit;
+    profile.farm_subscribes = data.farm_subscribes;
+    profile.subscribes_limit = data.subscribes_limit;
 
     config.save().map_err(|e| e.to_string())?;
     

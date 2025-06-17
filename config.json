@@ -1,5 +1,16 @@
 {
-  "profiles": {},
+  "profiles": {
+    "17501196004495a17": {
+      "name": "17501196004495a17",
+      "vk_id": "98271349876234",
+      "farm_likes": false,
+      "likes_limit": 55,
+      "farm_friends": true,
+      "friends_limit": 20,
+      "farm_subscribes": false,
+      "subscribes_limit": 2
+    }
+  },
   "settings": {
     "freelikes": {
       "likes_min_price": 3,

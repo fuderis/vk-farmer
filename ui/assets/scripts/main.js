@@ -1,4 +1,5 @@
 const invoke = window.__TAURI__.core.invoke;  // DO NOT REMOVE!!
+const timers = new Map();
 
 document.addEventListener('DOMContentLoaded', () => {
     // init bot profiles:
@@ -13,19 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(e => console.error(e));
 
     // form update handlers:
-    const blocksContainer = document.querySelector('.blocks');
-    const timers = new Map();
+    document.querySelector('.blocks').addEventListener('input', (event) => {
+        let input = event.target;
+        let id = input.getAttribute('target');
 
-    blocksContainer.addEventListener('input', (event) => {
-        const input = event.target;
-        const block = input.closest('.block');
-        if (!block) return;
-
-        const form = block.querySelector('form');
-        if (!form) return;
-
-        const id = block.getAttribute('target');
-        if (!id) return;
+        let block = document.querySelector(`.block[target="${id}"]`);
+        let form = block.querySelector('form.options');
 
         // reset form timer:
         if (timers.has(id)) {
@@ -35,23 +29,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // start form timer:
         timers.set(id, setTimeout(async () => {
             // serializing form data:
-            const formData = new FormData(form);
             const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
+            form.querySelectorAll('input, select, textarea').forEach(input => {
+                const name = input.name;
+                if (!name) return;
+
+                if (input.type === 'checkbox') {
+                    data[name] = input.checked;
+                } else if (input.type === 'number') {
+                    data[name] = input.value ? Number(input.value) : null;
+                } else {
+                    data[name] = input.value;
+                }
             });
 
-            invoke('update_bot', { id, data })
+            invoke('update_bot', { id, data: JSON.stringify(data) })
                 .then(_ => {
                     timers.delete(id);
                 })
                 .catch(e => console.error(e));
-        }, 3000));
+        }, 2000));
     });
 
     // buttons handlers:
     document.querySelector('#main .blocks').addEventListener('click', (event) => {
-        const target = event.target;
+        let target = event.target;
 
         // creating a new bot profile:
         if (target.closest('.create-bot')) {
