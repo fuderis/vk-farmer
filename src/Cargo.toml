@@ -1,6 +1,6 @@
 [package]
 name = "soc-farmer-bot"
-version = "0.2.1"
+version = "0.3.1"
 edition = "2024"
 build = "src/build.rs"
 
@@ -12,7 +12,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.0.1", features = ["config-toml"] }
 
 [dependencies]
-chromedriver-api = "0.1.2"
+chromedriver-api = "0.1.4"
 futures = "0.3.31"
 macron = { version = "0.1.5", features = ["derive", "input"] }
 serde = { version = "1.0.219", features = ["derive"] }

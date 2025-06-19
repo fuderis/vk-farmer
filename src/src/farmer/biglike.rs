@@ -21,13 +21,13 @@ impl BigLike {
         let profile = profile.into();
         
         // open tabs:
-        let biglike = session.open("https://biglike.org/vklike").await.map_err(|e| Error::from(fmt!("{e}")))?;
+        let biglike = session.open("https://biglike.org/vklike").await?;
         let mut biglike_lock = biglike.lock().await;
         
         let mut vk_lock = vkontakte.lock().await;
 
         // login to account:
-        if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
+        if biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
             info!("({}) <biglike.org> Login to account ..", &profile);
 
             let _ = biglike_lock.inject(&("".to_string() + r##"
@@ -41,15 +41,15 @@ impl BigLike {
                 let _btn_login_ = document.querySelector('#form_login button#loginvk');
                 _btn_login_.focus();
                 _btn_login_.click();
-            "##)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+            "##)).await?;
             sleep(Duration::from_secs(1)).await;
 
-            while biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
+            while biglike_lock.inject(r##"return document.querySelector('a[data-target="#login"]')? true: false;"##).await?.to_string() == "true" {
                 let log = biglike_lock.inject(r#"
                     let _txt_ = document.querySelector('#alerttxt b');
                 
                     return _txt_.textContent;
-                "#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
+                "#).await?.to_string();
 
                 let text = &log[1..log.len()-1];
 
@@ -60,7 +60,7 @@ impl BigLike {
                     let _btn_login_ = document.querySelector('input[value="ВОЙТИ"]');
                     _btn_login_.focus();
                     _btn_login_.click();
-                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
+                "#).await?;
                 sleep(Duration::from_secs(1)).await;
 
                 vk_lock.set_status(&old_status).await?;
@@ -87,14 +87,14 @@ impl BigLike {
         let mut biglike = self.biglike.lock().await;
         
         // open page:
-        biglike.open(&fmt!("https://biglike.org/{path}")).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        biglike.open(&fmt!("https://biglike.org/{path}")).await?;
 
         // disabling pop-ups:
         biglike.inject(r#"
             window.open = function(_url, _name, _specs) {
                 return null;
             };
-        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        "#).await?;
 
         Ok(())
     }
@@ -134,7 +134,7 @@ impl BigLike {
             }
         
             return null;
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
+        })();"#)).await?.to_string();
 
         match serde_json::from_str(&log) {
             Ok(task) => Ok(Some(task)),
@@ -154,7 +154,7 @@ impl BigLike {
                 button_start.focus();
                 button_start.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log)
@@ -172,7 +172,7 @@ impl BigLike {
                 button_check.focus();
                 button_check.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -190,7 +190,7 @@ impl BigLike {
                 button_remove.focus();
                 button_remove.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())

@@ -18,10 +18,10 @@ impl VKontakte {
 
         // waiting login to account:
         while tab.lock().await.inject(r#"return window.location.pathname != '/feed'"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
-            println!("[INFO] ({}) <vk.com> Waiting for login to account ..", &profile.name);
+            info!("({}) <vk.com> Waiting for login to account ..", &profile.name);
             sleep(Duration::from_secs(5)).await;
         }
-        println!("[INFO] ({}) <vk.com> Session is ready.", &profile.name);
+        info!("({}) <vk.com> Session is ready.", &profile.name);
         
         Ok(Self {
             id: profile.vk_id.clone(),

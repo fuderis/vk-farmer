@@ -105,7 +105,16 @@ async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, 
     let id: String = uniq_id();
     let profile = Profile {
         name: id.clone(),
-        ..Profile::default()
+        vk_id: "".into(),
+
+        farm_likes: config.settings.defaults.farm_likes,
+        likes_limit: config.settings.defaults.likes_limit,
+
+        farm_friends: config.settings.defaults.farm_friends,
+        friends_limit: config.settings.defaults.friends_limit,
+
+        farm_subscribes: config.settings.defaults.farm_subscribes,
+        subscribes_limit: config.settings.defaults.subscribes_limit,
     };
 
     let block = app::templates::gen_bot_profile(vec![

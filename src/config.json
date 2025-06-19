@@ -2,16 +2,24 @@
   "profiles": {
     "1750168475456329b": {
       "name": "Bot1",
-      "vk_id": "565898997",
+      "vk_id": "630806273",
       "farm_likes": true,
       "likes_limit": 100,
       "farm_friends": true,
-      "friends_limit": 25,
+      "friends_limit": 20,
       "farm_subscribes": true,
-      "subscribes_limit": 25
+      "subscribes_limit": 20
     }
   },
   "settings": {
+    "defaults": {
+      "farm_likes": true,
+      "likes_limit": 100,
+      "farm_friends": true,
+      "friends_limit": 20,
+      "farm_subscribes": true,
+      "subscribes_limit": 20
+    },
     "freelikes": {
       "likes_min_price": 3,
       "friends_min_price": 5,

@@ -25,13 +25,16 @@ impl Farmer {
     pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Arc<Mutex<Self>>> {
         info!("({}) Starting bot session ..", &profile.name);
 
+        let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.name);
         let port = port.into();
         
-        // run session:
-        let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.name);
-        let mut session = Session::run(&port, Some(&path)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        // run temp session (loging to social networks..):
+        let mut session = Session::run(&port, Some(&path), false).await?;
+        let _ = VKontakte::login(&mut session, &profile).await?;
+        session.close().await?;
 
-        // init task tabs:
+        // run session:
+        let mut session = Session::run(&port, Some(&path), true).await?;
         let vkontakte = Arc::new(Mutex::new(VKontakte::login(&mut session, &profile).await?));
         
         // init work tabs:
@@ -233,7 +236,7 @@ impl Farmer {
         info!("({}) Closing bot session ..", self.profile.name);
 
         if let Some(session) = self.session.take() {
-            session.close().await.map_err(|e| Error::from(fmt!("{e}")))?;
+            session.close().await?;
         }
 
         Ok(())

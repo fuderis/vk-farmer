@@ -21,13 +21,13 @@ impl FreeLikes {
         let profile = profile.into();
         
         // open website:
-        let freelikes = session.open("https://freelikes.online/vkontakte/vklike").await.map_err(|e| Error::from(fmt!("{e}")))?;
+        let freelikes = session.open("https://freelikes.online/vkontakte/vklike").await?;
         let mut freelikes_lock = freelikes.lock().await;
         
         let mut vk_lock = vkontakte.lock().await;
 
         // login to account:
-        if freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
+        if freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await?.to_string() == "true" {
             info!("({}) <freelikes.online> Login to account ..", &profile);
 
             let _ = freelikes_lock.inject(&("".to_string() + r#"
@@ -37,10 +37,10 @@ impl FreeLikes {
                 let _btn_login_ = document.querySelector('#form_login button.btnenter');
                 _btn_login_.focus();
                 _btn_login_.click();
-            "#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+            "#)).await?;
             sleep(Duration::from_secs(1)).await;
 
-            while freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string() == "true" {
+            while freelikes_lock.inject(r#"return document.querySelector('button[onclick="open_login_win();"]')? true: false;"#).await?.to_string() == "true" {
                 let log = freelikes_lock.inject(r#"
                     window.open = function(url, ...args) {
                         window.url_link = url;
@@ -55,7 +55,7 @@ impl FreeLikes {
                     _btn_link_.dispatchEvent(_click_ev_);
 
                     return window.url_link;
-                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
+                "#).await?;
 
                 let url = log.to_string().replace("'", "").replace("\"", "");
                 if url.starts_with("https://") {
@@ -72,7 +72,7 @@ impl FreeLikes {
                     _click_ev_.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
                                                 
                     _btn_check_.dispatchEvent(_click_ev_);
-                "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
+                "#).await?;
 
                 sleep(Duration::from_secs(5)).await;
             }
@@ -103,7 +103,7 @@ impl FreeLikes {
             window.open = function(_url, _name, _specs) {
                 return null;
             };
-        "#).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        "#).await?;
 
         Ok(())
     }
@@ -147,7 +147,7 @@ impl FreeLikes {
             }
         
             return null;
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?.to_string();
+        })();"#)).await?.to_string();
 
         match serde_json::from_str(&log) {
             Ok(task) => Ok(Some(task)),
@@ -167,7 +167,7 @@ impl FreeLikes {
                 button_start.focus();
                 button_start.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(log)
@@ -185,7 +185,7 @@ impl FreeLikes {
                 button_check.focus();
                 button_check.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())
@@ -203,7 +203,7 @@ impl FreeLikes {
                 button_remove.focus();
                 button_remove.click();
             }
-        })();"#)).await.map_err(|e| Error::from(fmt!("{e}")))?;
+        })();"#)).await?;
         sleep(Duration::from_secs(1)).await;
 
         Ok(())

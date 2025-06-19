@@ -2,7 +2,7 @@ use macron::{ Display, From, Error };
 
 // The result alias
 pub type StdResult<T, E> = std::result::Result<T, E>;
-pub type Result<T> = StdResult<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + std::marker::Send + std::marker::Sync + 'static>>;
 
 // The error
 #[derive(Debug, Display, Error, From)]

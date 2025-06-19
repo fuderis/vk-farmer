@@ -46,18 +46,34 @@ impl ::std::default::Default for Profile {
             likes_limit: 100,
 
             farm_friends: true,
-            friends_limit: 25,
+            friends_limit: 20,
 
             farm_subscribes: true,
-            subscribes_limit: 25,
+            subscribes_limit: 20,
         }
     }
+}
+
+
+
+/// The default farm settings
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Defaults {
+    pub farm_likes: bool,
+    pub likes_limit: usize,
+
+    pub farm_friends: bool,
+    pub friends_limit: usize,
+
+    pub farm_subscribes: bool,
+    pub subscribes_limit: usize,
 }
 
 
 /// The farm settings config
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
+    pub defaults: Defaults,
     pub freelikes: FarmSettings,
     pub biglike: FarmSettings,
     pub pause_delay: usize,
@@ -66,7 +82,16 @@ pub struct Settings {
 impl ::std::default::Default for Settings {
     fn default() -> Self {
         Self {
-            pause_delay: 10,
+            defaults: Defaults {
+                farm_likes: true,
+                likes_limit: 100,
+
+                farm_friends: true,
+                friends_limit: 20,
+
+                farm_subscribes: true,
+                subscribes_limit: 20,
+            },
             
             freelikes: FarmSettings {
                 likes_min_price: 3,
@@ -79,6 +104,8 @@ impl ::std::default::Default for Settings {
                 subscribes_min_price: 10,
                 friends_min_price: 10,
             },
+
+            pause_delay: 10,
         }
     }
 }
