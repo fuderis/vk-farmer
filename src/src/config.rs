@@ -124,7 +124,7 @@ pub struct Config {
 impl Config {
     /// Reads/writes config file
     pub fn read_or_write<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = path.as_ref();
+        let path = crate::root_path(path)?;
         
         // reading config file:
         let config = if path.exists() {
@@ -143,13 +143,13 @@ impl Config {
     
     /// Reads config from file
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = path.as_ref();
+        let path = crate::root_path(path)?;
 
         // read file:
-        let json_str = fs::read_to_string(path)?;
+        let json_str = fs::read_to_string(&path)?;
 
         let mut cfg: Config = serde_json::from_str(&json_str)?;
-        cfg.path = path.to_path_buf();
+        cfg.path = path;
 
         // parse json:
         Ok(cfg)
@@ -162,7 +162,7 @@ impl Config {
 
     /// Saves config to file
     pub fn save_to<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        self.path = path.as_ref().to_path_buf();
+        self.path = crate::root_path(path)?;
         
         // to json string:
         let json_str = serde_json::to_string_pretty(self)?;

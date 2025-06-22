@@ -2,8 +2,6 @@
 use app::{ prelude::*, Manager, Config, Profile };
 use tauri::State;
 
-use std::time;
-
 static LOGGER: Logger = Logger { logs: StdMutex::new(vec![]) };
 
 /// The programm logger
@@ -102,7 +100,7 @@ async fn update_bot_limits(id: String, manager: State<'_, Arc<Mutex<Manager>>>) 
 async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
     let mut config = config.lock().await;
 
-    let id: String = uniq_id();
+    let id: String = app::uniq_id();
     let profile = Profile {
         name: id.clone(),
         vk_id: "".into(),
@@ -230,14 +228,4 @@ async fn main() -> Result<()> {
         .run(tauri::generate_context!())?;
 
     Ok(())
-}
-
-
-/// Generates an unique ID
-fn uniq_id() -> String {
-    use time::{ SystemTime, UNIX_EPOCH };
-    
-    let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    let random: u16 = rand::random();
-    format!("{}{:04x}", millis, random)
 }

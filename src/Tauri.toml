@@ -1,5 +1,5 @@
 productName = "Social Farmer Bot"
-version = "0.3.1"
+version = "0.3.2"
 identifier = "com.fuderis.soc-farmer-bot"
 
 [build]
@@ -10,7 +10,7 @@ withGlobalTauri = true
 
 [[app.windows]]
 url = "views/main.html"
-title = "Social Farmer Bot (v0.3.1)"
+title = "Social Farmer Bot (v0.3.2)"
 width = 950
 height = 600
 resizable = true
@@ -30,5 +30,4 @@ icon = [
   "icons/icon.ico"
 ]
 resources = [
-  "config.json"
 ]

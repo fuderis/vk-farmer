@@ -10,6 +10,12 @@ pub enum Error {
     #[from]
     #[display = "{0}"]
     String(String),
+
+    #[display = "Couldn't get the directory of the root path"]
+    InvalidRootPath,
+
+    #[display = "The path contains invalid UTF-8 characters"]
+    InvalidPath,
     
     #[display = "There are no more tasks of this type"]
     NoMoreTasks,

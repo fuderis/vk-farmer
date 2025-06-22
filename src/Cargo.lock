@@ -433,9 +433,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chromedriver-api"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f67e7c5c67231dd3842aafade6ee3c36dfe643d7195aa541b5cab321bd08723b"
+checksum = "d4d304398558a0616417541268a2efcc97d2a9036a442e882c74d1c274cf1882"
 dependencies = [
  "macron",
  "reqwest",
@@ -3572,7 +3572,7 @@ checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
 
 [[package]]
 name = "soc-farmer-bot"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "chromedriver-api",
  "futures",
