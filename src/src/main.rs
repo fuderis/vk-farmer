@@ -197,7 +197,6 @@ async fn stop_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdRes
     Ok(String::new())
 }
 
-
 #[tokio::main]
 async fn main() -> Result<()> {
     log::set_logger(&LOGGER)?;
@@ -207,6 +206,11 @@ async fn main() -> Result<()> {
     let config = Arc::new(Mutex::new(Config::read_or_write("config.json")?));
     // init bots manager:
     let manager = Manager::new();
+
+    // allowing shortcuts:
+    let prevent = tauri_plugin_prevent_default::Builder::new()
+        .with_flags(tauri_plugin_prevent_default::Flags::empty())
+        .build();
 
     // run ui:
     tauri::Builder::default()
@@ -225,6 +229,7 @@ async fn main() -> Result<()> {
             start_bot,
             stop_bot,
         ])
+        .plugin(prevent)
         .run(tauri::generate_context!())?;
 
     Ok(())
