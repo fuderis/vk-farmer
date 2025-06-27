@@ -66,11 +66,22 @@ impl Farmer {
         let mut subscribes_limit = self.profile.subscribes_limit;
 
         loop {
-            if !self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await? {
-                info!("({}) Farming canceled! ..", self.profile.name);
-                return Ok(());
-            }
+            match self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await {
+                Ok(status) => {
+                    if status {
+                        info!("({}) Farming canceled! ..", self.profile.name);
+                        return Ok(());
+                    }
+                }
 
+                Err(e) => {
+                    err!("Farming panicked with error: {e}");
+                    self.close().await?;
+
+                    return Ok(());
+                }
+            }
+            
             if !self.task.lock().await.check_limits() {
                 info!("({}) All tasks is completed! ..", self.profile.name);
             } else {
@@ -102,13 +113,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <freelikes.online> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
@@ -125,13 +134,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <freelikes.online> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
@@ -148,13 +155,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <freelikes.online> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <freelikes.online> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
@@ -171,13 +176,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <biglike.org> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
@@ -194,13 +197,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <biglike.org> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
@@ -217,13 +218,11 @@ impl Farmer {
                                 sleep(Duration::from_secs(10)).await;
                             },
 
-                            _ => err!("({}) <biglike.org>> {}", self.profile.name, e.as_ref())
+                            _ => return Err(e),
                         }
                     }
 
-                    Err(e) => {
-                        err!("({}) <biglike.org> {e}", self.profile.name);
-                    }
+                    Err(e) => return Err(e)
                 }
             }
         }
