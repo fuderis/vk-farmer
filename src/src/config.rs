@@ -122,23 +122,26 @@ pub struct Config {
 }
 
 impl Config {
+    /// Needs to first initialization
+    pub fn init(&self) {}
+    
     /// Reads/writes config file
-    pub fn read_or_write<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = crate::root_path(path)?;
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Arc<Mutex<Self>>> {
+        let root_path = crate::root_path(&path)?;
         
         // reading config file:
-        let config = if path.exists() {
+        let config = if root_path.exists() {
             Config::read(path)?
         }
         // or writing default config file:
         else {
             let mut cfg = Config::default();
-            cfg.save_to(path)?;
+            cfg.save_to(root_path)?;
 
             cfg
         };
 
-        Ok(config)
+        Ok(Arc::new(Mutex::new( config )))
     }
     
     /// Reads config from file
@@ -161,8 +164,8 @@ impl Config {
     }
 
     /// Saves config to file
-    pub fn save_to<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        self.path = crate::root_path(path)?;
+    fn save_to<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.path = path.as_ref().to_path_buf();
         
         // to json string:
         let json_str = serde_json::to_string_pretty(self)?;
