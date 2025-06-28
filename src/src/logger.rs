@@ -31,7 +31,7 @@ impl log::Log for Logger {
             }
             // send log to frontend:
             emit_event("update-logs", hash_map!{
-                "log": log,
+                "log": Value::String(log),
             });
         }
     }

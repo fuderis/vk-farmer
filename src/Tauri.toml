@@ -30,4 +30,5 @@ icon = [
   "icons/icon.ico"
 ]
 resources = [
+  "icon.ico"
 ]
