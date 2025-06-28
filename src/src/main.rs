@@ -1,64 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]  // DO NOT REMOVE!!
-use app::{ prelude::*, Manager, Config, Profile };
-use tauri::State;
-
-static LOGGER: Logger = Logger { logs: StdMutex::new(vec![]) };
-
-/// The programm logger
-struct Logger {
-    pub logs: StdMutex<Vec<String>>,
-}
-
-impl Logger {
-    /// Takes all logger logs
-    pub fn take(&self) -> Vec<String> {
-        let mut logs_lock = self.logs.lock().unwrap();
-        std::mem::take(&mut *logs_lock)
-    }
-}
-
-impl log::Log for Logger {
-    fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.level() <= log::Level::Info
-    }
-
-    fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let log = fmt!("[{}] {}", record.level(), record.args());
-
-            // printing to terminal:
-            println!("{log}");
-
-            // preparing log message:
-            let mut msg = log;
-            for (k, v) in [
-                ("<", "&lt;"),
-                (">", "&gt;"),
-            ] {
-                msg = msg.replace(k, v);
-            }
-
-            let log = app::templates::gen_log_line(vec![
-                ("__LOG__".to_owned(), msg),
-            ]);
-            
-            self.logs.lock().unwrap().push(log);
-        }
-    }
-
-    fn flush(&self) {}
-}
-
-/// Updates logger lines
-#[tauri::command]
-async fn update_logger() -> StdResult<Vec<String>, String> {
-    Ok(LOGGER.take())
-}
+use app::{ prelude::*, Manager, Profile };
+use tauri::Manager as TauriManager;
 
 /// Get bot profiles
 #[tauri::command]
-async fn get_bots(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<Vec<String>, String> {
-    let config = config.lock().await;
+async fn get_bots() -> StdResult<Vec<String>, String> {
+    let config = CONFIG.lock().await;
     
     // reading profiles:
     let profiles = config.profiles.iter()
@@ -88,17 +35,10 @@ async fn get_bots(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<Vec<String
     Ok(profiles)
 }
 
-/// Updates bot limits percentage
-#[tauri::command]
-async fn update_bot_limits(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdResult<usize, String> {
-    let percent = manager.lock().await.get_bot_limits_percentage(&id).await.map_err(|e| e.to_string())?;
-    Ok(percent)
-}
-
 /// Creates a new bot
 #[tauri::command]
-async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
-    let mut config = config.lock().await;
+async fn create_bot() -> StdResult<String, String> {
+    let mut config = CONFIG.lock().await;
 
     let id: String = app::uniq_id();
     let profile = Profile {
@@ -141,8 +81,8 @@ async fn create_bot(config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, 
 
 /// Removes a bot
 #[tauri::command]
-async fn delete_bot(id: String, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
-    let mut config = config.lock().await;
+async fn delete_bot(id: String) -> StdResult<String, String> {
+    let mut config = CONFIG.lock().await;
     let _profile = config.profiles.get(&id).ok_or(Error::InvalidBotNameID.to_string())?;
 
     config.profiles.remove(&id);
@@ -153,8 +93,8 @@ async fn delete_bot(id: String, config: State<'_, Arc<Mutex<Config>>>) -> StdRes
 
 /// Updates bot data
 #[tauri::command]
-async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<usize, String> {
-    let mut config = config.lock().await;
+async fn update_bot(id: String, data: String) -> StdResult<usize, String> {
+    let mut config = CONFIG.lock().await;
     let profile = config.profiles.get_mut(&id).ok_or(Error::InvalidBotNameID.to_string())?;
 
     let data: Profile = serde_json::from_str(&data).map_err(|e| e.to_string())?;
@@ -180,32 +120,34 @@ async fn update_bot(id: String, data: String, config: State<'_, Arc<Mutex<Config
 
 /// Start bot handler
 #[tauri::command]
-async fn start_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>, config: State<'_, Arc<Mutex<Config>>>) -> StdResult<String, String> {
-    let config = config.lock().await;
+async fn start_bot(id: String) -> StdResult<String, String> {
+    let config = CONFIG.lock().await;
     let profile = config.profiles.get(&id).ok_or(Error::InvalidBotNameID.to_string())?;
     
-    manager.lock().await.start_bot(id, profile.clone(), config.settings.clone()).await.map_err(|e| e.to_string())?;
+    BOTS_MANAGER.lock().await.start_bot(id, profile.clone(), config.settings.clone()).await.map_err(|e| e.to_string())?;
 
     Ok(String::new())
 }
 
 /// Stop bot handler
 #[tauri::command]
-async fn stop_bot(id: String, manager: State<'_, Arc<Mutex<Manager>>>) -> StdResult<String, String> {
-    manager.lock().await.stop_bot(&id).await.map_err(|e| e.to_string())?;
+async fn stop_bot(id: String) -> StdResult<String, String> {
+    BOTS_MANAGER.lock().await.stop_bot(&id).await.map_err(|e| e.to_string())?;
 
     Ok(String::new())
 }
 
+
+pub static BOTS_MANAGER: Lazy<Arc<Mutex<Manager>>> = Lazy::new(|| Manager::new());
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    log::set_logger(&LOGGER)?;
+    // init logger:
+    log::set_logger(&*LOGGER).map_err(Error::from)?;
     log::set_max_level(log::LevelFilter::Info);
-
-    // read/write config:
-    let config = Arc::new(Mutex::new(Config::read_or_write("config.json")?));
-    // init bots manager:
-    let manager = Manager::new();
+    
+    // init config:
+    CONFIG.lock().await.init();
 
     // allowing shortcuts:
     let prevent = tauri_plugin_prevent_default::Builder::new()
@@ -214,13 +156,8 @@ async fn main() -> Result<()> {
 
     // run ui:
     tauri::Builder::default()
-        .manage(config)
-        .manage(manager)
         .invoke_handler(tauri::generate_handler![
-            update_logger,
-            
             get_bots,
-            update_bot_limits,
 
             create_bot,
             delete_bot,
@@ -229,6 +166,61 @@ async fn main() -> Result<()> {
             start_bot,
             stop_bot,
         ])
+        .setup(|app| {
+            let app_handle = app.app_handle().clone();
+            let window = app_handle.get_webview_window("main").unwrap();
+
+            // init app handler:
+            *APP_HANDLE.lock().unwrap() = Some(app_handle.clone());
+            
+            // init tray-icon:
+            *SYSTEM_TRAY.lock().unwrap() = Some(Tray::new());
+            
+            // window events:
+            window.on_window_event(move |event| {
+                let window = app_handle.get_webview_window("main").unwrap();
+                
+                match event {
+                    // if window closes:
+                    tauri::WindowEvent::CloseRequested { api, .. } => {
+                        api.prevent_close();
+                        
+                        // closing bot sessions:
+                        tokio::task::block_in_place(|| {
+                            tauri::async_runtime::block_on(async {
+                                let mut manager = BOTS_MANAGER.lock().await;
+                                manager.stop_all_bots().await.unwrap();
+
+                                loop {
+                                    if manager.all_bots_is_stoped().await {
+                                        break;
+                                    }
+                                }
+                            });
+                        });
+
+                        // removing tray:
+                        if let Some(tray) = SYSTEM_TRAY.lock().unwrap().take() {
+                            tray.remove();
+                        }
+
+                        // closing program:
+                        app_handle.exit(0);
+                    }
+
+                    // if window minimized:
+                    tauri::WindowEvent::Resized(_) => {
+                        if window.is_minimized().unwrap_or(false) {
+                            window.hide().unwrap();
+                        }
+                    }
+
+                    _ => {}
+                }
+            });
+            
+            Ok(())
+        })
         .plugin(prevent)
         .run(tauri::generate_context!())?;
 

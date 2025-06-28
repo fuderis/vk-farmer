@@ -1,5 +1,34 @@
-const invoke = window.__TAURI__.core.invoke;  // DO NOT REMOVE!!
+const tauri = window.__TAURI__;     // DO NOT REMOVE!!
+const invoke = tauri.core.invoke;   // DO NOT REMOVE!!
+const events = tauri.event;         // DO NOT REMOVE!!
 const timers = new Map();
+
+
+//            E V E N T S:
+
+// update program logs:
+events.listen('update-logs', ({ payload }) => {
+    const { log } = payload;
+
+    // add log line:
+    let logger = document.querySelector('#logger');
+    logger.insertAdjacentHTML('beforeend', `<div class="line">${log}</div>`);
+
+    // scroll logs down:
+    logger.scrollTop += logger.scrollHeight;
+});
+
+// update bot progress:
+events.listen('update-bot-progress', ({ payload }) => {
+    const { bot_id, progress } = payload;
+
+    // update progress bar:
+    let bot_block = document.querySelector(`#main .blocks .block[target="${bot_id}"]`);
+    bot_block.querySelector('.progress-bar .value').textContent = progress;
+});
+
+
+//            H A N D L E R S:
 
 document.addEventListener('DOMContentLoaded', () => {
     // init bot profiles:
@@ -13,47 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(e => console.error(e));
 
-    // update programm logs:
-    setInterval(() => {
-        let logger = document.querySelector('#logger');
-            
-        invoke("update_logger", { })
-            .then(logs => {
-                logs.forEach((log) => {
-                    logger.insertAdjacentHTML('beforeend', log);
-                });
-
-                logger.scrollTop += logger.scrollHeight;
-            })
-            .catch(e => console.error(e));
-    }, 1000);
-
-    // update bot limits percentage:
-    setInterval(() => {
-        document.querySelectorAll('#main .blocks .block.active').forEach((block) => {
-            let id = block.getAttribute('target');
-
-            invoke("update_bot_limits", { id })
-                .then(percents => {
-                    block.querySelector('.progress-bar .value').textContent = percents;
-                })
-                .catch(e => console.error(e));
-        });
-    }, 3000);
-
-    // init buttons 'start all' & 'stop all':
+    // init button 'start all':
     document.querySelector('#header button.start-all').addEventListener('click', (e) => {
         document.querySelectorAll('#main .blocks .block:not(.create-bot):not(.active)').forEach((block) => {
             block.querySelector('button.start-farm').click();
         });
     });
+    // init button 'stop all':
     document.querySelector('#header button.stop-all').addEventListener('click', (e) => {
         document.querySelectorAll('#main .blocks .block:not(.create-bot).active').forEach((block) => {
             block.querySelector('button.stop-farm').click();
         });
     });
 
-    // form update handlers:
+    // forms update handler:
     document.querySelector('#main .blocks').addEventListener('input', (e) => {
         let input = e.target;
         let id = input.getAttribute('target');
@@ -93,11 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000));
     });
 
-    // buttons handlers:
+    // button handlers:
     document.querySelector('#main .blocks').addEventListener('click', (e) => {
         let target = e.target;
 
-        // creating a new bot profile:
+        // create a new bot profile:
         if (target.closest('.create-bot')) {
             let button = target.closest('.create-bot');
 
@@ -111,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.removeAttribute('disabled');
         }
 
-        // removing a bot profile:
+        // remove a bot profile:
         else if (target.closest('.delete-bot')) {
             let button = target.closest('.delete-bot');
             let id = button.getAttribute("target");
@@ -127,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(e => console.error(e));
         }
 
-        // starting farming:
+        // start farming:
         else if (target.closest('.start-farm')) {
             let button = target.closest('.start-farm');
             let id = button.getAttribute("target");
@@ -145,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(e => console.error(e));
         }
 
-        // stoping farming:
+        // stop farming:
         else if (target.closest('.stop-farm')) {
             let button = target.closest('.stop-farm');
             let id = button.getAttribute("target");

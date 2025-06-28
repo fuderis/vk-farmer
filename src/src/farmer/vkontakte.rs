@@ -12,7 +12,7 @@ pub struct VKontakte {
 
 impl VKontakte {
     /// Login into VK account
-    pub async fn login(session: &mut Session, profile: &Profile) -> Result<Self> {
+    pub async fn login(session: &mut Session, profile: &Profile, is_temp: bool) -> Result<Self> {
         let tab = session.open("https://vk.com/").await.map_err(|e| Error::from(fmt!("{e}")))?;
         sleep(Duration::from_secs(3)).await;
 
@@ -21,7 +21,9 @@ impl VKontakte {
             info!("({}) <vk.com> Waiting for login to account ..", &profile.name);
             sleep(Duration::from_secs(5)).await;
         }
-        info!("({}) <vk.com> Session is ready.", &profile.name);
+        if !is_temp {
+            info!("({}) <vk.com> Session is ready.", &profile.name);
+        }
         
         Ok(Self {
             id: profile.vk_id.clone(),

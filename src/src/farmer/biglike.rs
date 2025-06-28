@@ -222,7 +222,7 @@ impl BigLike {
         // open page with tasks:
         self.open_tasks("vklike").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
@@ -264,7 +264,7 @@ impl BigLike {
         // open page with tasks:
         self.open_tasks("vkfriend").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:
@@ -306,7 +306,7 @@ impl BigLike {
         // open page with tasks:
         self.open_tasks("vkgroup").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <biglike.org> Searching task..", self.profile);
             
             // searching next task:

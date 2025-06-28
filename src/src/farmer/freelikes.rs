@@ -235,7 +235,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vklike").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -277,7 +277,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vkfriend").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:
@@ -319,7 +319,7 @@ impl FreeLikes {
         // open page with tasks:
         self.open_tasks("vkontakte/vkgroup").await?;
         
-        while *limit > 0 && !self.task.lock().await.is_closed() {
+        while *limit > 0 && !self.task.lock().await.to_close() {
             info!("({}) <freelikes.online> Searching task..", self.profile);
             
             // searching next task:

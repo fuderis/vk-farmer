@@ -11,6 +11,9 @@ pub enum Error {
     #[display = "{0}"]
     String(String),
 
+    #[from]
+    Logger(log::SetLoggerError),
+
     #[display = "Couldn't get the directory of the root path"]
     InvalidRootPath,
 
@@ -24,5 +27,8 @@ pub enum Error {
     InvalidBotNameID,
 
     #[display = "The bot's name is already used"]
-    BotNameIDIsBusy
+    BotNameIDIsBusy,
+
+    #[display = "Bot login canceled"]
+    BotLoginCanceled
 }

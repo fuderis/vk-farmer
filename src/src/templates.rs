@@ -1,16 +1,3 @@
-// use crate::prelude::*;
-
-/// Generates logger line HTML code
-pub fn gen_log_line(replaces: Vec<(String, String)>) -> String {
-    let mut s = r##"<div class="line">__LOG__</div>"##.to_owned();
-
-    for (k, v) in replaces {
-        s = s.replace(&k, &v);
-    }
-
-    s
-}
-
 /// Generates bot profile HTML code
 pub fn gen_bot_profile(replaces: Vec<(String, String)>) -> String {
     let mut s = r##"

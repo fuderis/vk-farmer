@@ -5,7 +5,7 @@ use super::Task;
 #[derive(Debug)]
 pub struct Manager {
     port: usize,
-    bots: Arc<Mutex<HashMap<String, (Arc<Mutex<Farmer>>, Arc<Mutex<Task>>)>>>,
+    bots: Arc<Mutex<HashMap<String, (Arc<Mutex<Option<Farmer>>>, Arc<Mutex<Task>>)>>>,
 }
 
 impl Manager {
@@ -33,26 +33,34 @@ impl Manager {
         let port = self.port.to_string();
         self.port += 1;
         
-        // spawn task:
-        tokio::spawn(Self::start_bot_handler(self.bots.clone(), port, id, profile, settings));
+        // create a task controller:
+        let task = Task::new(
+            &id,
+            if profile.farm_likes { profile.likes_limit }else{ 0 }
+            + if profile.farm_friends { profile.friends_limit }else{ 0 }
+            + if profile.farm_subscribes { profile.subscribes_limit }else{ 0 }
+        );
+
+        let bot = Arc::new(Mutex::new(None));
+        self.bots.lock().await.insert(id, (bot.clone(), task.clone()));
+        
+        // spawn handler:
+        tokio::spawn(Self::start_bot_handler(bot, task, port, profile, settings));
         
         Ok(())
     }
 
     /// Start bot session handler
-    async fn start_bot_handler(bots: Arc<Mutex<HashMap<String, (Arc<Mutex<Farmer>>, Arc<Mutex<Task>>)>>>, port: String, id: String, profile: Profile, settings: Settings) {
-        let task = Task::new(
-            if profile.farm_likes { profile.likes_limit }else{ 0 }
-            + if profile.farm_friends { profile.friends_limit }else{ 0 }
-            + if profile.farm_subscribes { profile.subscribes_limit }else{ 0 }
-        );
-        
-        // init & start bot:
-        let bot = Farmer::login(task.clone(), port, profile, settings).await.unwrap();
-        let _ = bots.lock().await.insert(id, (bot.clone(), task));
-
+    async fn start_bot_handler(bot: Arc<Mutex<Option<Farmer>>>, task: Arc<Mutex<Task>>, port: String, profile: Profile, settings: Settings) {
+        // starting farm:
         tokio::spawn(async move {
-            bot.lock().await.farm().await.unwrap();
+            // init & start bot:
+            let farmer = Farmer::login(task.clone(), port, profile, settings).await.unwrap();
+            let _ = bot.lock().await.insert(farmer);
+            
+            if let Some(mut bot) = bot.lock().await.take() {
+                bot.farm().await.unwrap()
+            }
         });
     }
 
@@ -61,10 +69,9 @@ impl Manager {
         if let Some((bot, task)) = self.bots.lock().await.remove(id) {
             task.lock().await.close();
 
-            let mut bot_lock = bot.lock().await;
-            bot_lock.close().await?;
-
-            drop(bot_lock);
+            if let Some(mut bot) = bot.lock().await.take() {
+                bot.close().await?;
+            }
         } else {
             return Err(Error::InvalidBotNameID.into())
         }
@@ -72,12 +79,25 @@ impl Manager {
         Ok(())
     }
 
-    /// Get bot limits percentage
-    pub async fn get_bot_limits_percentage(&self, id: &str) -> Result<usize> {
-        if let Some((_, task)) = self.bots.lock().await.get(id) {
-            Ok(task.lock().await.calc_limits_percentage())
-        } else {
-            Err(Error::InvalidBotNameID.into())
+    /// Stop all bot sessions
+    pub async fn stop_all_bots(&mut self) -> Result<()> {
+        warn!("Closing bot sessions before closing program, please wait..");
+        
+        for (_, (_, task)) in self.bots.lock().await.iter() {
+            task.lock().await.close();
         }
+
+        Ok(())
+    }
+
+    /// Checks all bot sessions for closed
+    pub async fn all_bots_is_stoped(&self) -> bool {
+        for (_, (_, task)) in self.bots.lock().await.iter() {
+            if !task.lock().await.is_closed() {
+                return false;
+            }
+        }
+
+        true
     }
 }

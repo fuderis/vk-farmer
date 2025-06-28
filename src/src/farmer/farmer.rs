@@ -22,7 +22,7 @@ pub struct Farmer {
 
 impl Farmer {
     /// Login to profile
-    pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Arc<Mutex<Self>>> {
+    pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Self> {
         info!("({}) Starting bot session ..", &profile.name);
 
         let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.name);
@@ -30,21 +30,41 @@ impl Farmer {
         
         // run temp session (loging to social networks..):
         let mut session = Session::run(&port, Some(&path), false).await?;
-        let _ = VKontakte::login(&mut session, &profile).await?;
+        let _ = VKontakte::login(&mut session, &profile, true).await?;
         session.close().await?;
+
+        if task.lock().await.to_close() {
+            return Err(Error::BotLoginCanceled.into())
+        }
 
         // run session:
         let mut session = Session::run(&port, Some(&path), true).await?;
-        let vkontakte = Arc::new(Mutex::new(VKontakte::login(&mut session, &profile).await?));
+        let vkontakte = Arc::new(Mutex::new(VKontakte::login(&mut session, &profile, false).await?));
         
-        // init work tabs:
+        if task.lock().await.to_close() {
+            session.close().await?;
+            return Err(Error::BotLoginCanceled.into())
+        }
+        
+        // init freelikes:
         let freelikes = FreeLikes::login(task.clone(), &profile.name, &mut session, vkontakte.clone()).await?;
+
+        if task.lock().await.to_close() {
+            session.close().await?;
+            return Err(Error::BotLoginCanceled.into())
+        }
+
+        // init biglike:
         let biglike = BigLike::login(task.clone(), &profile.name, &mut session, vkontakte.clone()).await?;
+
+        if task.lock().await.to_close() {
+            session.close().await?;
+            return Err(Error::BotLoginCanceled.into())
+        }
 
         info!("({}) Session is ready.", &profile.name);
 
-        Ok(Arc::new(Mutex::new(
-            Self {
+        Ok(Self {
                 task,
 
                 port,
@@ -56,7 +76,7 @@ impl Farmer {
                 freelikes,
                 biglike
             }
-        )))
+        )
     }
 
     /// Start farming
@@ -68,9 +88,27 @@ impl Farmer {
         loop {
             match self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await {
                 Ok(status) => {
-                    if status {
+                    if !status {
                         info!("({}) Farming canceled! ..", self.profile.name);
+                        self.close().await?;
+
                         return Ok(());
+                    }
+                    else if !self.task.lock().await.check_limits() {
+                        info!("({}) All tasks is completed! ..", self.profile.name);
+                        return Ok(());
+                    }
+                    else {
+                        info!("({}) Tasks is over, timeout for {} minutes ..", self.profile.name, self.settings.pause_delay);
+
+                        for _ in 0..(self.settings.pause_delay as u64 * 60) {
+                            if self.task.lock().await.to_close() {
+                                info!("({}) Farming canceled! ..", self.profile.name);
+                                return Ok(());
+                            }
+                            
+                            sleep(Duration::from_secs(1)).await;
+                        }
                     }
                 }
 
@@ -81,28 +119,13 @@ impl Farmer {
                     return Ok(());
                 }
             }
-            
-            if !self.task.lock().await.check_limits() {
-                info!("({}) All tasks is completed! ..", self.profile.name);
-            } else {
-                info!("({}) Tasks is over, timeout for {} minutes ..", self.profile.name, self.settings.pause_delay);
-
-                for _ in 0..(self.settings.pause_delay as u64 * 60) {
-                    if self.task.lock().await.is_closed() {
-                        info!("({}) Farming canceled! ..", self.profile.name);
-                        return Ok(());
-                    }
-                    
-                    sleep(Duration::from_secs(1)).await;
-                }
-            }
         }
     }
 
     /// The farming handler
     async fn farm_handler(&mut self, mut likes_limit: &mut usize, mut friends_limit: &mut usize, mut subscribes_limit: &mut usize) -> Result<bool> {
         // <freelikes.online> farm likes:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_likes && *likes_limit > 0 {
             if let Err(e) = self.freelikes.vk_farm_likes(self.settings.freelikes.likes_min_price, &mut likes_limit).await {
                 match e.downcast::<Error>() {
@@ -123,7 +146,7 @@ impl Farmer {
         }
 
         // <freelikes.online> farm friends:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_friends && *friends_limit > 0 {
             if let Err(e) = self.freelikes.vk_farm_friends(self.settings.freelikes.friends_min_price, &mut friends_limit).await {
                 match e.downcast::<Error>() {
@@ -144,7 +167,7 @@ impl Farmer {
         }
 
         // <freelikes.online> farm subscribes:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_subscribes && *subscribes_limit > 0 {
             if let Err(e) = self.freelikes.vk_farm_subscribes(self.settings.freelikes.subscribes_min_price, &mut subscribes_limit).await {
                 match e.downcast::<Error>() {
@@ -165,7 +188,7 @@ impl Farmer {
         }
 
         // <biglike.org> farm likes:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_likes && *likes_limit > 0 {
             if let Err(e) = self.biglike.vk_farm_likes(self.settings.biglike.likes_min_price, &mut likes_limit).await {
                 match e.downcast::<Error>() {
@@ -186,7 +209,7 @@ impl Farmer {
         }
 
         // <biglike.org> farm friends:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_friends && *friends_limit > 0 {
             if let Err(e) = self.biglike.vk_farm_friends(self.settings.biglike.friends_min_price, &mut friends_limit).await {
                 match e.downcast::<Error>() {
@@ -207,7 +230,7 @@ impl Farmer {
         }
 
         // <biglike.org> farm subscribes:
-        if self.task.lock().await.is_closed() { return Ok(false); }
+        if self.task.lock().await.to_close() { return Ok(false); }
         if self.profile.farm_subscribes && *subscribes_limit > 0 {
             if let Err(e) = self.biglike.vk_farm_subscribes(self.settings.biglike.subscribes_min_price, &mut subscribes_limit).await {
                 match e.downcast::<Error>() {
@@ -237,6 +260,8 @@ impl Farmer {
         if let Some(session) = self.session.take() {
             session.close().await?;
         }
+
+        self.task.lock().await.set_as_closed();
 
         Ok(())
     }
