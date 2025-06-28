@@ -1,10 +1,11 @@
 use crate::{ prelude::*, Farmer, Profile, Settings };
 use super::Task;
 
+use std::net::TcpListener;
+
 /// The bots manager
 #[derive(Debug)]
 pub struct Manager {
-    port: usize,
     bots: Arc<Mutex<HashMap<String, (Arc<Mutex<Option<Farmer>>>, Arc<Mutex<Task>>)>>>,
 }
 
@@ -13,7 +14,6 @@ impl Manager {
     pub fn new() -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(
             Self {
-                port: 54477,
                 bots: Arc::new(Mutex::new(HashMap::new()))
             }
         ))
@@ -29,9 +29,8 @@ impl Manager {
         // convert id:
         let id = id.into();
         
-        // generate new port:
-        let port = self.port.to_string();
-        self.port += 1;
+        // get free port:
+        let port = TcpListener::bind("127.0.0.1:0")?.local_addr()?.port().to_string();
         
         // create a task controller:
         let task = Task::new(
@@ -55,11 +54,16 @@ impl Manager {
         // starting farm:
         tokio::spawn(async move {
             // init & start bot:
-            let farmer = Farmer::login(task.clone(), port, profile, settings).await.unwrap();
-            let _ = bot.lock().await.insert(farmer);
-            
-            if let Some(mut bot) = bot.lock().await.take() {
-                bot.farm().await.unwrap()
+            match Farmer::login(task.clone(), port, profile, settings).await {
+                Ok(farmer) => {
+                    let _ = bot.lock().await.insert(farmer);
+                    
+                    if let Some(mut bot) = bot.lock().await.take() {
+                        bot.farm().await.unwrap()
+                    }
+                }
+
+                Err(_e) => {}
             }
         });
     }
@@ -68,7 +72,7 @@ impl Manager {
     pub async fn stop_bot(&mut self, id: &str) -> Result<()> {
         if let Some((bot, task)) = self.bots.lock().await.remove(id) {
             task.lock().await.close();
-
+            
             if let Some(mut bot) = bot.lock().await.take() {
                 bot.close().await?;
             }
