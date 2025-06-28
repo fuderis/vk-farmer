@@ -10,9 +10,17 @@ const timers = new Map();
 events.listen('update-logs', ({ payload }) => {
     const { log } = payload;
 
+    let style = "info";
+    if (log.includes("[WARN]")) {
+        style = "warn";
+    }
+    else if (log.includes("[ERROR]")) {
+        style = "err";
+    }
+
     // add log line:
     let logger = document.querySelector('#logger');
-    logger.insertAdjacentHTML('beforeend', `<div class="line">${log}</div>`);
+    logger.insertAdjacentHTML('beforeend', `<div class="line ${style}">${log}</div>`);
 
     // scroll logs down:
     logger.scrollTop += logger.scrollHeight;

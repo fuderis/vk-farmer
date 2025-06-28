@@ -1,8 +1,10 @@
 use crate::prelude::*;
+use std::fs;
+use chrono::Local;
 
 /// The program logger
 pub struct Logger {
-    /* pub logs: StdMutex<Vec<String>>, */
+    pub logs: StdMutex<Vec<String>>,
 }
 
 impl log::Log for Logger {
@@ -12,26 +14,25 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let log = fmt!("[{}] {}", record.level(), record.args());
+            let dt = Local::now().format("%Y/%m/%d/T%H:%M:%S%.6f");
+            let mut log = fmt!("[{dt}] [{}] {}", record.level(), record.args());
 
             // printing to terminal:
             println!("{log}");
+            
+            self.logs.lock().unwrap().push(log.clone());
 
             // preparing log message:
-            let mut msg = log;
             for (k, v) in [
                 ("<", "&lt;"),
                 (">", "&gt;"),
             ] {
-                msg = msg.replace(k, v);
+                log = log.replace(k, v);
             }
-
             // send log to frontend:
             emit_event("update-logs", hash_map!{
-                "log": msg,
+                "log": log,
             });
-
-            /* self.logs.lock().unwrap().push(log); */
         }
     }
 
@@ -42,14 +43,33 @@ impl Logger {
     /// Creates a new logger
     pub fn new() -> Self {
         Self {
-            /* logs: StdMutex::new(vec![]) */
+            logs: StdMutex::new(vec![])
         }
     }
-
-    /* /// Collects logs and clears them
+    
+    /// Collects logs and clears them
     pub fn take(&self) -> Vec<String> {
         let mut logs_lock = self.logs.lock().unwrap();
 
         std::mem::take(&mut *logs_lock)
-    } */
+    }
+
+    /// Saves logs to file
+    pub fn save(&self) -> Result<()> {
+        let now = Local::now();
+        let fname = now.format("logs/%Y-%m-%d_%H-%M-%S.txt").to_string();
+        let path = root_path(fname)?;
+
+        // create file dir:
+        let dir = path.parent().unwrap();
+        if !dir.exists() {
+            fs::create_dir_all(dir)?;
+        }
+
+        // writing logs to file:
+        let logs_str = self.logs.lock().unwrap().join("\n");
+        fs::write(path, logs_str)?;
+
+        Ok(())
+    }
 }

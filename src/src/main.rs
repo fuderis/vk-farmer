@@ -199,6 +199,9 @@ async fn main() -> Result<()> {
                             });
                         });
 
+                        // saving logs:
+                        LOGGER.save().unwrap();
+
                         // removing tray:
                         if let Some(tray) = SYSTEM_TRAY.lock().unwrap().take() {
                             tray.remove();

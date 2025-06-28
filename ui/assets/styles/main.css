@@ -500,3 +500,15 @@ button.delete .icon {
 #logger .line {
     margin-top: 5px;
 }
+
+#logger .line.info {
+    color: #3DC1F9;
+}
+
+#logger .line.warn {
+    color: #f9d63d;
+}
+
+#logger .line.err {
+    color: #f93d3d;
+}
