@@ -11,8 +11,8 @@ withGlobalTauri = true
 [[app.windows]]
 url = "views/main.html"
 title = "Social Farmer Bot"
-width = 950
-height = 600
+width = 1000
+height = 700
 resizable = true
 fullscreen = false
 
@@ -30,6 +30,6 @@ icon = [
   "icons/icon.ico"
 ]
 resources = [
-  "../bin",
-  "../icon.ico"
+  "bin",
+  "icon.ico"
 ]
