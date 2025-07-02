@@ -14,7 +14,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let dt = Local::now().format("%Y/%m/%d/T%H:%M:%S%.6f");
+            let dt = Local::now().format("%Y-%m-%dT%H:%M:%S%.6f");
             let mut log = fmt!("[{dt}] [{}] {}", record.level(), record.args());
 
             // printing to terminal:
@@ -40,6 +40,14 @@ impl log::Log for Logger {
 }
 
 impl Logger {
+    /// Initializes logger in program
+    pub fn init(&'static self) -> Result<()> {
+        log::set_logger(self).map_err(Error::from)?;
+        log::set_max_level(log::LevelFilter::Info);
+
+        Ok(())
+    }
+    
     /// Creates a new logger
     pub fn new() -> Self {
         Self {
@@ -56,9 +64,7 @@ impl Logger {
 
     /// Saves logs to file
     pub fn save(&self) -> Result<()> {
-        let now = Local::now();
-        let fname = now.format("logs/%Y-%m-%d_%H-%M-%S.txt").to_string();
-        let path = root_path(fname)?;
+        let path = path!(Local::now().format("/logs/%Y-%m-%d_%H-%M-%S.log").to_string());
 
         // create file dir:
         let dir = path.parent().unwrap();

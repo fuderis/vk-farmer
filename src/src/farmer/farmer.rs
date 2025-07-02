@@ -14,6 +14,7 @@ pub struct Farmer {
     pub(crate) profile: Profile,
     pub(crate) settings: Settings,
     
+    bot_id: String,
     session: Option<Session>,
     vkontakte: Arc<Mutex<VKontakte>>,
     freelikes: FreeLikes,
@@ -22,14 +23,15 @@ pub struct Farmer {
 
 impl Farmer {
     /// Login to profile
-    pub async fn login<S: Into<String>>(task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Self> {
+    pub async fn login<S: Into<String>>(bot_id: S, task: Arc<Mutex<Task>>, port: S, profile: Profile, settings: Settings) -> Result<Self> {
         info!("({}) Starting bot session ..", &profile.name);
 
+        let bot_id = bot_id.into();
         let path = fmt!("C:\\Users\\Synap\\AppData\\Local\\Google\\Chrome\\Profiles\\{}", &profile.name);
         let port = port.into();
         
         // run temp session (loging to social networks..):
-        let mut session = Session::run(&port, Some(&path), false).await?;
+        let mut session = Session::run(&port, Some("/bin/chromedriver/chromedriver.exe"), Some(&path), false).await?;
         let _ = VKontakte::login(&mut session, &profile, true).await?;
         session.close().await?;
 
@@ -38,7 +40,7 @@ impl Farmer {
         }
 
         // run session:
-        let mut session = Session::run(&port, Some(&path), true).await?;
+        let mut session = Session::run(&port, Some("/bin/chromedriver/chromedriver.exe"), Some(&path), true).await?;
         let vkontakte = Arc::new(Mutex::new(VKontakte::login(&mut session, &profile, false).await?));
         
         if task.lock().await.to_close() {
@@ -65,6 +67,7 @@ impl Farmer {
         info!("({}) Session is ready.", &profile.name);
 
         Ok(Self {
+                bot_id,
                 task,
 
                 port,
@@ -89,13 +92,15 @@ impl Farmer {
             match self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await {
                 Ok(status) => {
                     if !status {
-                        info!("({}) Farming canceled! ..", self.profile.name);
+                        info!("({}) Farming canceled!", self.profile.name);
                         self.close().await?;
 
                         return Ok(());
                     }
                     else if !self.task.lock().await.check_limits() {
-                        info!("({}) All tasks is completed! ..", self.profile.name);
+                        info!("({}) All tasks is completed!", self.profile.name);
+                        self.close().await?;
+
                         return Ok(());
                     }
                     else {
@@ -103,7 +108,7 @@ impl Farmer {
 
                         for _ in 0..(self.settings.pause_delay as u64 * 60) {
                             if self.task.lock().await.to_close() {
-                                info!("({}) Farming canceled! ..", self.profile.name);
+                                info!("({}) Farming canceled!", self.profile.name);
                                 return Ok(());
                             }
                             
@@ -255,14 +260,17 @@ impl Farmer {
 
     /// Close profile session
     pub async fn close(&mut self) -> Result<()> {
-        info!("({}) Closing bot session ..", self.profile.name);
-
         if let Some(session) = self.session.take() {
             session.close().await?;
         }
 
         self.task.lock().await.set_as_closed();
 
+        emit_event("bot-stopped", hash_map! {
+            "bot_id": Value::String(self.bot_id.clone()),
+        });
+        
+        info!("({}) Session is closed!", self.profile.name);
         Ok(())
     }
 }

@@ -35,6 +35,16 @@ events.listen('update-bot-progress', ({ payload }) => {
     bot_block.querySelector('.progress-bar .value').textContent = progress;
 });
 
+// stop bot farming:
+events.listen('bot-stopped', ({ payload }) => {
+    const { bot_id } = payload;
+
+    let bot = document.querySelector(`.block[target="${bot_id}"]`);
+
+    bot.classList.remove("active");
+    bot.removeAttribute('disabled', '');
+});
+
 
 //            H A N D L E R S:
 
@@ -164,10 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bot.setAttribute('disabled', '');
 
             invoke("stop_bot", { id })
-                .then(_ => {
-                    bot.classList.remove("active");
-                    bot.removeAttribute('disabled', '');
-                })
+                .then(_ => {})
                 .catch(e => console.error(e));
         }
     });

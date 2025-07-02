@@ -143,11 +143,7 @@ pub static BOTS_MANAGER: Lazy<Arc<Mutex<Manager>>> = Lazy::new(|| Manager::new()
 #[tokio::main]
 async fn main() -> Result<()> {
     // init logger:
-    log::set_logger(&*LOGGER).map_err(Error::from)?;
-    log::set_max_level(log::LevelFilter::Info);
-    
-    // init config:
-    CONFIG.lock().await.init();
+    LOGGER.init()?;
 
     // allowing shortcuts:
     let prevent = tauri_plugin_prevent_default::Builder::new()

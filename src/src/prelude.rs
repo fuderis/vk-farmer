@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-pub use crate::{ LOGGER, CONFIG, APP_HANDLE, SYSTEM_TRAY, root_path, uniq_id, emit_event };
+pub use crate::{ LOGGER, CONFIG, APP_HANDLE, SYSTEM_TRAY, emit_event, uniq_id };
 pub use crate::error::{ StdResult, Result, Error };
 pub use crate::logger::Logger;
 pub use crate::config::Config;

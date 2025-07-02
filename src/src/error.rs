@@ -13,12 +13,6 @@ pub enum Error {
 
     #[from]
     Logger(log::SetLoggerError),
-
-    #[display = "Couldn't get the directory of the root path"]
-    InvalidRootPath,
-
-    #[display = "The path contains invalid UTF-8 characters"]
-    InvalidPath,
     
     #[display = "There are no more tasks of this type"]
     NoMoreTasks,

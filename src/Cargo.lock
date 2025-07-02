@@ -337,9 +337,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chromedriver-api"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4d304398558a0616417541268a2efcc97d2a9036a442e882c74d1c274cf1882"
+checksum = "91392f09eac813898b45c51b30c963e4abc1de1be32ae5f254fca61519e9999d"
 dependencies = [
  "macron",
  "reqwest",
@@ -1852,9 +1852,9 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 
 [[package]]
 name = "macron"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e095b8a705605d30eed162c90dd413eb4593e8282a7667018d5fa2fc205dbcd"
+checksum = "67c4e606530286ca90961c84454e077c5217d6a0f902df7800ef2d30546fbec8"
 dependencies = [
  "macron-collections",
  "macron-impl-display",
@@ -1864,6 +1864,9 @@ dependencies = [
  "macron-input",
  "macron-inputln",
  "macron-map",
+ "macron-path",
+ "macron-regex",
+ "macron-str",
 ]
 
 [[package]]
@@ -1946,6 +1949,34 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8fd1e10d314ee9aa76777f1412185fbf51844a438867107f3b617aa2eb03b53"
 dependencies = [
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "macron-path"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e39698e96be6c14427cbbc115d6f1fa775c6b789f3dfdd9f1ff239906d0fe41"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "macron-regex"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "055b1d9e7b56b4f45b9a7501532f88b6306e3bf91fcbea8ffb71b3811380f793"
+
+[[package]]
+name = "macron-str"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d354b048a4a2bcf527b6106bcc1fb68145a444b568107f7fb7782b7014195157"
+dependencies = [
+ "proc-macro2",
  "quote",
  "syn 2.0.101",
 ]
@@ -3373,7 +3404,7 @@ checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
 
 [[package]]
 name = "soc-farmer-bot"
-version = "0.3.3"
+version = "0.0.0"
 dependencies = [
  "chromedriver-api",
  "chrono",

@@ -20,41 +20,41 @@ impl Manager {
     }
 
     /// Start bot session
-    pub async fn start_bot<S: Into<String>>(&mut self, id: S, profile: Profile, settings: Settings) -> Result<()> {        
+    pub async fn start_bot<S: Into<String>>(&mut self, bot_id: S, profile: Profile, settings: Settings) -> Result<()> {        
         // check name for unique:
         if self.bots.lock().await.contains_key(&profile.name) {
             return Err(Error::BotNameIDIsBusy.into());
         }
 
         // convert id:
-        let id = id.into();
+        let bot_id = bot_id.into();
         
         // get free port:
         let port = TcpListener::bind("127.0.0.1:0")?.local_addr()?.port().to_string();
         
         // create a task controller:
         let task = Task::new(
-            &id,
+            &bot_id,
             if profile.farm_likes { profile.likes_limit }else{ 0 }
             + if profile.farm_friends { profile.friends_limit }else{ 0 }
             + if profile.farm_subscribes { profile.subscribes_limit }else{ 0 }
         );
 
         let bot = Arc::new(Mutex::new(None));
-        self.bots.lock().await.insert(id, (bot.clone(), task.clone()));
+        self.bots.lock().await.insert(bot_id.clone(), (bot.clone(), task.clone()));
         
         // spawn handler:
-        tokio::spawn(Self::start_bot_handler(bot, task, port, profile, settings));
+        tokio::spawn(Self::start_bot_handler(bot_id, bot, task, port, profile, settings));
         
         Ok(())
     }
 
     /// Start bot session handler
-    async fn start_bot_handler(bot: Arc<Mutex<Option<Farmer>>>, task: Arc<Mutex<Task>>, port: String, profile: Profile, settings: Settings) {
+    async fn start_bot_handler(bot_id: String, bot: Arc<Mutex<Option<Farmer>>>, task: Arc<Mutex<Task>>, port: String, profile: Profile, settings: Settings) {
         // starting farm:
         tokio::spawn(async move {
             // init & start bot:
-            match Farmer::login(task.clone(), port, profile, settings).await {
+            match Farmer::login(bot_id, task.clone(), port, profile, settings).await {
                 Ok(farmer) => {
                     let _ = bot.lock().await.insert(farmer);
                     

@@ -12,7 +12,7 @@ impl Tray {
         use tauri::tray;
 
         let tray = tray::TrayIconBuilder::new()
-            .icon(tauri::image::Image::from_path(root_path("icon.ico").unwrap()).unwrap())
+            .icon(tauri::image::Image::from_path(path!("/icon.ico")).unwrap())
             .on_tray_icon_event(|tray, event| {
                 if let tray::TrayIconEvent::Click { button, button_state, .. } = event {
                     if button == tray::MouseButton::Left && button_state == tray::MouseButtonState::Up {
