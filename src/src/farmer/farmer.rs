@@ -92,23 +92,25 @@ impl Farmer {
             match self.farm_handler(&mut likes_limit, &mut friends_limit, &mut subscribes_limit).await {
                 Ok(status) => {
                     if !status {
-                        info!("({}) Farming canceled!", self.profile.name);
+                        warn!("({}) Farming canceled! Closing session..", self.profile.name);
                         self.close().await?;
 
                         return Ok(());
                     }
                     else if !self.task.lock().await.check_limits() {
-                        info!("({}) All tasks is completed!", self.profile.name);
+                        warn!("({}) All tasks is completed! Closing session..", self.profile.name);
                         self.close().await?;
 
                         return Ok(());
                     }
                     else {
-                        info!("({}) Tasks is over, timeout for {} minutes ..", self.profile.name, self.settings.pause_delay);
+                        warn!("({}) Tasks is over, timeout for {} minutes..", self.profile.name, self.settings.pause_delay);
 
                         for _ in 0..(self.settings.pause_delay as u64 * 60) {
                             if self.task.lock().await.to_close() {
-                                info!("({}) Farming canceled!", self.profile.name);
+                                warn!("({}) Farming canceled! Closing session..", self.profile.name);
+                                self.close().await?;
+
                                 return Ok(());
                             }
                             
@@ -137,7 +139,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <freelikes.online> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <freelikes.online> The tasks for 'likes' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -158,7 +160,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <freelikes.online> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <freelikes.online> The tasks for 'friends' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -179,7 +181,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <freelikes.online> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <freelikes.online> The tasks for 'subscribes' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -200,7 +202,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <biglike.org> The tasks for 'likes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <biglike.org> The tasks for 'likes' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -221,7 +223,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <biglike.org> The tasks for 'friends' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <biglike.org> The tasks for 'friends' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -242,7 +244,7 @@ impl Farmer {
                     Ok(e) => {
                         match e.as_ref() {
                             Error::NoMoreTasks => {
-                                info!("({}) <biglike.org> The tasks for 'subscribes' type are over, timeout for 10 seconds ..", self.profile.name);
+                                warn!("({}) <biglike.org> The tasks for 'subscribes' type are over, timeout for 10 seconds..", self.profile.name);
                                 sleep(Duration::from_secs(10)).await;
                             },
 
@@ -270,7 +272,7 @@ impl Farmer {
             "bot_id": Value::String(self.bot_id.clone()),
         });
         
-        info!("({}) Session is closed!", self.profile.name);
+        warn!("({}) Session is closed!", self.profile.name);
         Ok(())
     }
 }
