@@ -3403,25 +3403,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
 
 [[package]]
-name = "soc-farmer-bot"
-version = "0.0.0"
-dependencies = [
- "chromedriver-api",
- "chrono",
- "futures",
- "log",
- "macron",
- "once_cell",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-prevent-default",
- "tokio",
-]
-
-[[package]]
 name = "socket2"
 version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4378,6 +4359,25 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vk-farmer"
+version = "0.0.0"
+dependencies = [
+ "chromedriver-api",
+ "chrono",
+ "futures",
+ "log",
+ "macron",
+ "once_cell",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-prevent-default",
+ "tokio",
+]
 
 [[package]]
 name = "vswhom"

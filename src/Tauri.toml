@@ -1,5 +1,5 @@
-productName = "Social Farmer Bot"
-version = "0.3.5"
+productName = "VK Farmer"
+version = "0.3.6"
 identifier = "com.fuderis.soc-farmer-bot"
 
 [build]
@@ -10,7 +10,7 @@ withGlobalTauri = true
 
 [[app.windows]]
 url = "views/main.html"
-title = "Social Farmer Bot"
+title = "VK Farmer"
 width = 1000
 height = 700
 resizable = true

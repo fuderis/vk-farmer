@@ -1,5 +1,5 @@
 [package]
-name = "soc-farmer-bot"
+name = "vk-farmer"
 edition = "2024"
 build = "src/build.rs"
 
