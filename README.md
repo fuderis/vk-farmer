@@ -19,10 +19,11 @@ VK Farmer is a convenient bot manager for automatically earning points on popula
 ## Installation:
 
 1. Download and install the [latest version](https://github.com/fuderis/vk-farmer/raw/main/VKFarmer.zip).
-2. Set up bot profiles and launch them one by one, logging into each bot's VKontakte account.
-3. Start the bots and minimize the program window so it moves to the system tray.
-4. Let it run in the background while you go about your activities.
-5. Use the earned points to promote your social networks.
+2. Install the **Google Chrome** browser and update it to the latest version.
+3. Set up bot profiles and launch them one by one, logging into each bot's VKontakte account.
+4. Start the bots and minimize the program window so it moves to the system tray.
+5. Let it run in the background while you go about your activities.
+6. Use the earned points to promote your social networks.
 
 ![Screenshot](readme/screenshot.png)
 
